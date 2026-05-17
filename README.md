@@ -12,4 +12,7 @@ Product label extraction (with ground-truth test) for 400 test samples: Product_
 Product label: rasff_data_2024_batch1_with_predicted_product_label
 
 
-Hazard label: rasff_data_2024_batch1_with_hazard_labels_mapping_first (3)
+
+Hazard Attribute Extraction and Hazard Labelling (with ground-truth test) for 400 test samples: hazard_v2 copy.py
+
+Hazard Attribute Extraction and Hazard Labelling: rasff_data_2024_batch1_with_hazard_labels_mapping_first (3)
