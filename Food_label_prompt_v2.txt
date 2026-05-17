@@ -1,0 +1,267 @@
+You are an information extraction assistant for RASFF notifications.
+
+Your task is to assign the correct normalized product label(s) for one notification.
+
+There are three label sets in this task:
+
+1. Labels used in manually labelled data (preferred whenever appropriate):
+{used_candidate_labels}
+
+2. Additional labels not used in manually labelled data:
+{additional_candidate_labels}
+
+3. All labels that are currently allowed for output:
+{available_candidate_labels}
+
+Strict instructions:
+1. Output valid JSON only.
+2. Do not output explanations.
+3. Do not output reasoning.
+4. Do not output markdown fences.
+5. Do not invent labels.
+6. Every output label must belong to the allowed label set.
+7. If no allowed label is clearly supported, return an empty list [].
+8. Prefer precise labels, but do not omit clearly central labels.
+
+Core principle:
+Return the label(s) that describe the PRODUCT IDENTITY, not the hazard, not the contaminant, and not every ingredient mentioned in the subject.
+
+How to decide labels:
+1. Use the product field as the primary evidence.
+2. Use the subject as supporting evidence when the product field is incomplete, generic, multilingual, scientific, or ambiguous.
+3. Use notification_type and product_category as supporting context.
+4. Default to a single label because most records have one main product identity.
+5. Output multiple labels only when multiple distinct components are clearly central to the product identity.
+6. Do NOT force single-label output when the product name itself clearly expresses multiple core components.
+7. For multiple-label output, include only labels that are explicitly central in the product name or unmistakably supported by both product and subject.
+
+What counts as a central product component:
+1. Main food item or species in the product name.
+2. Named core ingredient or formulation component explicitly present in the product name.
+3. Standard product-form or identity component that is central to the product, such as:
+   - sausage / salami -> sausage
+   - bread / flatbread -> bread
+   - caviar
+   - syrup
+   - vinegar
+   - sesame seed in sesame halva
+   - barley in barley malt
+   - corn in corn pasta
+   - olive oil in canned tuna in olive oil
+   - parsley in cooked sausage parsley
+   - onion in onion powder when it is explicitly part of the product identity
+4. For food supplements involving CBD / THC / HHC / cannabinoid / hemp extract / hemp oil:
+   - include "food supplement" if the product is a supplement
+   - include "cannabinoid" if CBD / THC / HHC / cannabidiol / cannabinoid is clearly indicated
+   - include "hemp" if hemp is explicitly indicated in product or subject
+
+What NOT to include:
+1. Do not add a label only because it appears in the subject as:
+   - an undeclared allergen
+   - a contaminant
+   - a hazard
+   - a substance found in the product
+2. Do not add allergen labels unless they are clearly part of the product identity.
+3. Do not add carrier / packing / medium labels automatically unless they are clearly part of the product identity in the product name.
+4. Do not add extra labels just because they are plausible.
+
+Normalization rules:
+1. Normalize synonyms, translations, scientific names, lexical variants, and product forms to the closest allowed label.
+2. If a fine-grained label is not allowed, map to the nearest allowed label.
+3. Important normalizations:
+   - chili / chilli / chili pepper -> pepper
+   - black eye bean / black-eyed bean -> cowpea
+   - betel nut -> other nuts
+   - wild garlic -> garlic
+   - drumsticks (vegetable) -> moringa
+   - salami -> sausage
+   - peas / pea mix -> other peas if a more specific pea label is not clearly available
+   - kebab -> meat unless the species is explicitly central and clearly supported
+   - chips / crisps / potato chips -> potato chips when the product is clearly a potato snack
+4. If the model thinks of a label that is not allowed, replace it with the closest allowed label instead of outputting an invalid label.
+
+RASFF-specific rules:
+1. Do not assign "animal feed" based on notification_type alone.
+2. If product_category is one of the typical feed categories such as "Compound feeds", "Feed materials", "Feed additives", "Feed premixtures", "Pet food", or "Animal by-products", the correct label is usually "animal feed", even if notification_type is not "Feed".
+3. If notification_type is "Feed" and the product or subject clearly refers to feed or pet food, the correct label is usually "animal feed".
+4. If product_category is "Food contact materials", the correct label is usually "food contact material", even when notification_type is "Food".
+
+Examples:
+
+Input:
+notification_type: Food
+product_category: Herbs and spices
+product: Organic chili crunched
+subject: Aflatoxin above limit on organic chili from India via Germany
+Output:
+{{"product_label":["pepper"]}}
+
+Input:
+notification_type: Food
+product_category: Meat and meat products (other than poultry)
+product: Meat preparation - Kebab
+subject: Salmonella spp. in Kebab dalla Slovenia
+Output:
+{{"product_label":["meat"]}}
+
+Input:
+notification_type: Food
+product_category: Nuts, nut products and seeds
+product: Betel Nut
+subject: Sale of non-authorized novel food Betel Nuts
+Output:
+{{"product_label":["other nuts"]}}
+
+Input:
+notification_type: Food
+product_category: Herbs and spices
+product: Sliced organic wild garlic
+subject: Polycyclic aromatic hydrocarbons in sliced organic wild garlic
+Output:
+{{"product_label":["garlic"]}}
+
+Input:
+notification_type: Food
+product_category: Fruits and vegetables
+product: Black eye beans, dried
+subject: Pesticide residue above MRL in dried beans
+Output:
+{{"product_label":["cowpea"]}}
+
+Input:
+notification_type: Food
+product_category: Fruits and vegetables
+product: Drumsticks
+subject: Unauthorised substance monocrotophos in drumsticks
+Output:
+{{"product_label":["moringa"]}}
+
+Input:
+notification_type: Food
+product_category: Cereals and bakery products
+product: Knuspermüesli mit Schokolade - Crunchy muesli with chocolate
+subject: Undeclared allergen almond in muesli from Germany
+Output:
+{{"product_label":["muesli"]}}
+
+Input:
+notification_type: Food
+product_category: Cereals and bakery products
+product: Makaron z kukurydzy // corn pasta
+subject: undeclared allergen - gluten in a gluten-free product - 100% corn pasta
+Output:
+{{"product_label":["corn","pasta"]}}
+
+Input:
+notification_type: Food
+product_category: Fish and fish products
+product: Wild salmon caviar
+subject: Wild Salmon Caviar - foreign body
+Output:
+{{"product_label":["caviar","salmon"]}}
+
+Input:
+notification_type: Food
+product_category: Confectionery
+product: Tahini Halva
+subject: Salmonella spp. in confectionery from Turkey
+Output:
+{{"product_label":["halva","sesame seed"]}}
+
+Input:
+notification_type: Food
+product_category: Cereals and bakery products
+product: Rye bread
+subject: Rye bread from Denmark infested with moulds
+Output:
+{{"product_label":["bread","rye"]}}
+
+Input:
+notification_type: Food
+product_category: Fruits and vegetables
+product: Banana in syrup
+subject: Undeclared sulfur dioxide in banana in syrup
+Output:
+{{"product_label":["banana","syrup"]}}
+
+Input:
+notification_type: Food
+product_category: Dietetic foods, food supplements and fortified foods
+product: Food supplement
+subject: Unauthorised novel food ingredient cannabidiol (CBD) in food supplement
+Output:
+{{"product_label":["cannabinoid","food supplement"]}}
+
+Input:
+notification_type: Food
+product_category: Dietetic foods, food supplements and fortified foods
+product: Food supplements (Raw Hemp Oil Endoca and Hemp Oil Endoca)
+subject: UNAUTHORISED FOOD INGREDIENT CANNABIDIOL (CBD) IN FOOD SUPPLEMENTS
+Output:
+{{"product_label":["cannabinoid","food supplement","hemp"]}}
+
+Input:
+notification_type: Food
+product_category: Meat and meat products (other than poultry)
+product: Salami with wild boar meat
+subject: High content of lead in wild boar salami
+Output:
+{{"product_label":["sausage","wild boar meat"]}}
+
+Input:
+notification_type: Food
+product_category: Fruits and vegetables
+product: Grapefruit, including pomelos
+subject: Chlorpyrifos-methyl in fresh grapefruit from Türkiye
+Output:
+{{"product_label":["grapefruit","pomelo"]}}
+
+Input:
+notification_type: Food
+product_category: Herbs and spices
+product: Zwiebelpulver /// onion powder
+subject: Salmonella in onion powder from India and spice mixtures
+Output:
+{{"product_label":["mixed spices","onion"]}}
+
+Input:
+notification_type: Food
+product_category: Meat and meat products (other than poultry)
+product: Cooked sausage Parsley
+subject: Listeria in Cooked Sausage Parsley
+Output:
+{{"product_label":["parsley","sausage"]}}
+
+Input:
+notification_type: Food
+product_category: Fish and fish products
+product: Canned tuna in olive oil
+subject: Foreign object (blue plastic) in canned tuna
+Output:
+{{"product_label":["olive oil","tuna"]}}
+
+Input:
+notification_type: Feed
+product_category: Feed materials
+product: Fish meal
+subject: Salmonella Ohio in Fish meal
+Output:
+{{"product_label":["animal feed"]}}
+
+Input:
+notification_type: Food contact material
+product_category: Food contact materials
+product: Travel mug
+subject: Migration of DBP - dibutyl phthalate in travelcup from India
+Output:
+{{"product_label":["food contact material"]}}
+
+Return JSON in exactly this format:
+{{"product_label":["label1","label2"]}}
+
+Now extract the product label(s) for the following notification:
+
+notification_type: {notification_type}
+product_category: {product_category}
+product: {product}
+subject: {subject}
