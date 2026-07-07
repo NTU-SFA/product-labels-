@@ -1,0 +1,813 @@
+abalone
+abiu
+affilla cress
+ajwan
+allspice
+almond
+aloe vera
+amaranth
+amchur
+anchovy
+angelfish
+angelica tree
+angle bean flower
+angled gourd
+anglerfish
+animal feed
+animal semen
+anise
+apple
+apple blossom
+apricot
+apricot kernel
+aprium
+arapaima
+arbutus
+arrowhead
+artemisia selengensis
+artichoke
+asparagus
+assam bean
+atsina cress
+avocado
+avocado oil
+babassu oil
+bacon
+bael fruit
+baking powder
+bambara bean
+bamboo fungus
+bamboo shoot
+banana
+barb
+barley
+barracuda
+basil
+bay leaf
+bayam
+bean sprout
+beef
+beef casing
+beer
+beeswax oil
+beet sugar
+beetroot
+belachan
+bergamot
+betel leaf
+bilberry
+bird's nest
+biriba
+biscuit
+bitter gourd
+black bean
+black moss
+blackberry
+blueberry
+bluntnose lizardfish
+bonito
+borage
+borage cress
+bottle gourd
+bovine semen
+box ray
+boysenberry
+brandy
+brazil nut
+bread
+brill
+broad bean
+brocco cress
+broccoli
+brussel sprout
+buckwheat
+burdock
+burma bean
+butter
+butterbur
+butterfish
+buttermilk
+butternut
+cabbage
+cactus
+calabrese tendergreen
+canary seed
+candle nut
+candy
+cane sugar
+cantaloupe
+caper
+caramel
+caraway
+cardamom
+cardinalfish
+carp
+carrot
+carrot flower
+cashew
+cassava
+castor oil
+catfish
+cauliflower
+caviar
+celeriac
+celery
+cereal bar
+cerole
+chayote gourd
+cheese
+chempedak
+cherry
+cherry blossom
+chervil
+chestnut
+chicken
+chicken egg
+chicken extract
+chickpea
+chickweed
+chicory
+chiku
+chilli sauce
+chive
+chocolate
+chrysanthemum
+cinnamon
+cinnamon flower
+citra leaf
+citron
+citrus fruit peel
+civet bean
+clam
+climbing fern
+climbing wattle
+clove
+coalfish
+cobia
+cockle
+cocoa
+coconut
+coconut oil
+coconut sugar
+cod
+coffee
+colostrum
+conch
+copra
+coral bream
+coral fish
+coriander
+corn
+corn oil
+cornetfish
+cotton seed
+cotton seed oil
+couscous
+cow milk
+cowpea
+crab
+cranberry
+crayfish
+cream
+cress shiso
+croaker fish
+crocodile meat
+cucumber
+cultured meat
+cumin
+cumin oil
+curd
+currant
+curry
+curry leaf
+curry spices
+custard
+custard apple
+cuttlefish
+dabai
+dace
+dairy creamer
+dandelion
+date
+devil ray
+dill
+dogfish
+dolico bean
+dorab
+dough
+dragon fruit
+dried grape
+drinking water
+drumstick gourd
+duck
+duck egg
+duffin bean
+duku
+dulce cress
+dumpling
+durian
+eel
+egg fruit
+eggplant
+elephant fish
+empurau
+emu meat
+energy drink
+escolar
+falafel
+false shark ray
+feijoa
+fennel
+fenugreek
+fiddlehead
+fig
+filefish
+fish fry
+fish liver
+fish maw
+fish oil
+fish roe
+fish sauce
+flat fish
+flathead
+flaxseed
+flaxseed oil
+flounder
+flour
+flying fish
+food additive
+food contact material
+food flavouring
+food supplement
+french bean
+frog
+fruit jam
+fruit juice
+galangal
+garden cress
+garden pea
+garfish
+garlic
+garlic flower
+gelatine
+ghee
+gherkin
+ghoa cress
+gin
+ginger
+gingko nut
+ginseng
+gizzard shad
+gluten
+goat cheese
+goat meat
+goat milk
+goby
+goose
+gooseberry
+gourami
+gram
+granola
+grape
+grape leaf
+grapefruit
+green bean
+grenotti leaf
+ground pepper
+grouper
+guava
+guinea fowl
+guitarfish
+gula melaka
+gurnard
+gynura
+haddock
+hair tail
+hairy bitter cress
+hairy gourd
+hake
+halfbeak
+halibut
+halva
+ham
+hami melon
+hard tail
+haricot bean
+hawthorn
+hazelnut
+hemp
+herring
+hilsa
+hoki
+honey
+honeydew
+honny cress
+horned melon
+horse meat
+horse radish
+hosta montana
+ice cream
+ice plant
+infant food
+infant formula
+infant milk
+insect food
+instant noodle
+inulin
+jackfruit
+jambu
+jelly
+jelly fish
+jelly fungus
+john dory
+jojoba
+juniper
+junsai
+kale
+kalettes
+kangaroo meat
+kangkong
+kedondong
+kephir
+kidney bean
+kikuna cress
+kimchi
+king fish
+kingklip
+kintan
+kipper
+kiwifruit
+knife fish
+kohlrabi
+kola nut
+kumquat
+lamb
+lampam jawa
+lampang
+langsat
+leather jacket
+leek
+lemon
+lemongrass
+lengkua
+lentil
+lettuce
+lily bulb
+lily flower
+lima bean
+lime
+liquorice
+live chicken
+live duck
+live goat
+live goose
+live pig
+live turkey
+lizard fish
+loach
+lobster
+locust bean
+loganberry
+long bean
+longan
+longfin mojarra
+loquat
+lotus root
+lotus seed
+lovage
+lulo
+lupin
+lychee
+macadamia
+mace
+mache cress
+mackerel
+madagascar bean
+madeira vine
+mahi mahi
+majii leaf
+mallard
+malt
+maltodextrin
+mamey sapote
+mandarin orange
+mango
+mango fish
+mango plum
+mangosteen
+maple sugar
+margarine
+marjoram
+marlin
+marrow
+mata kuching
+matrimony vine
+mayonnaise
+meat
+meat extract
+melon peel
+melon seed
+meninjau
+meslin
+milk fish
+millet
+mint
+miracle fruit
+misome
+mitsuba
+mixed fruits
+mixed nuts
+mixed seeds
+mixed spices
+mixed vegetables
+mock meat
+mock seafood
+mola mola
+molasses
+monk fish
+moon fish
+mooncake
+moringa
+morwong
+moth bean
+mud fish
+muesli
+mulberry
+mullet
+mung bean
+mushroom
+musk melon
+mussel
+mustard cress
+mustard leaf
+mustard oil
+mustard seed
+mutton
+myoga
+nasturtium
+nata de coco
+nectarine
+nigella
+non dairy creamer
+noni
+nougat
+nutmeg
+oat
+octopus
+oil fish
+okra
+olive
+olive oil
+onion
+orange
+orange roughy
+oregano
+ostrich
+other alcoholic drinks
+other beans
+other berry fruits
+other cakes
+other cereal products
+other condiments
+other confectionery
+other crustaceans
+other drinks
+other eggs
+other flowers
+other game meats
+other herbs
+other juices
+other leafy vegetables
+other leaves
+other melons
+other milk
+other molluscs
+other noodles
+other nuts
+other oils
+other pastries
+other peas
+other preserved vegetables
+other seafood
+other seasonings
+other seeds
+other snacks
+other spices
+other sprouts
+other sugars
+other teas
+oyster
+oyster sauce
+palm berry
+palm cabbage
+palm heart
+palm nut
+palm oil
+palm seed
+palm sugar
+palmyra fruit
+pampano
+pancake
+papaya
+parrot fish
+parsley
+parsnip
+partridge
+passion fruit
+pasta
+peach
+peanut
+peanut butter
+peanut oil
+pear
+pecan
+pennywort
+pepino melon
+pepper
+peppercorn
+perch
+perilla
+perilla cress
+periwinkle
+persimmon
+pheasant
+philibon melon
+pig fish
+pigeon
+pike
+pine nut
+pineapple
+pistachio
+plaice
+plantain
+plum
+pluot
+pollack
+pollen
+pollock
+pomegranate
+pomelo
+pomfret
+pompano
+pony fish
+poppy seed
+porcupine fish
+pork
+pork casing
+potal
+potato
+potato chips
+poultry
+pregnant fish
+protein concentrate
+prune
+puffer fish
+pulasan
+pumpkin
+pumpkin seed
+quail
+quail egg
+queen fish
+quince
+rabbit fish
+rabbit meat
+radish
+rambai
+rambutan
+rangoon bean
+rapeseed
+rapeseed oil
+raspberry
+red bean
+red fish
+red goat fish
+red phoneix
+red yeast rice
+reef manta ray
+rhubarb
+ribbon fish
+rice
+rice noodle
+rock fish
+rock shell
+rohu
+rollmop
+rose bud
+rose flower
+roselle
+rosemary
+royal jelly
+ruby fish
+rucola
+rudderfish
+rusk
+rye
+ryukyu tuswa buki
+safflower
+safflower oil
+safflower seed
+saffron
+sage
+sago
+sailfish
+sakura cress
+salad
+salak
+salep
+salicornia cress
+salmon
+salsify
+salt
+saltwort
+sand fish
+santol
+sardine
+sardinella
+saury
+sausage
+savalai hairtail
+savory
+scabbardfish
+scad
+scallion
+scallop
+scampi
+scarlet cress
+schreber's aster
+scorpionfish
+sea bream
+sea coconut
+sea cucumber
+sea dragon
+sea fennel
+sea horse
+sea snail
+sea urchin
+seabass
+seabream
+seafood extract
+seaweed
+seerfish
+semolina
+sesame oil
+sesame seed
+shajira
+shallot
+shark
+sheep casing
+sheep cheese
+sheep milk
+shepherds purse
+shrimp
+sichuan cress
+sichuan pepper
+silver belly
+silverbeet
+sivea bean
+sloe
+smelt
+snail
+snake gourd
+snakehead
+snakeskin gourami
+snapper
+snow pea
+soft drink
+sole
+sorghum
+sorghum molasses
+sorrel
+sorrel cress
+soup
+soursop
+soya bean oil
+soya protein
+soya sauce
+soyabean
+soyabean curd
+soyabean oil
+spatchcock
+spear leaved orache
+spearfish
+spinach
+spiny gourd
+spiny melon
+spirulina
+sprat
+spring onion
+spruce needles
+squab
+squash
+squid
+star anise
+star apple
+star fruit
+starch
+stink bean
+stone fish
+strawberry
+string bean
+sturgeon
+sugar apple
+sugarcane
+sultan fish
+sumac
+sunflower oil
+sunflower seed
+surimi
+swamp barb
+sweet fish
+sweet flag
+sweet potato
+sweet potato leaf
+sweet shoot
+sweetener
+sweetlip
+sweetsop
+swiss chard
+swordfish
+syrha leaf
+syrup
+tahoon cress
+tamarillo
+tamarind
+tapioca
+tapioca leaf
+taro
+tarragon
+tea
+teff
+tempeh
+tepary bean
+threadfin
+thyme
+tilapia
+tomatillo
+tomato
+tomato paste
+tomato sauce
+tooth fish
+top shell
+topmouth culter
+trevally
+trout
+truffle
+tuna
+turbot
+turkey
+turmeric
+turnip
+turtle
+vanilla
+veal
+venison
+vinegar
+vodka
+wafer
+waffle
+wahoo
+wallago
+walnut
+warehou fish
+wasabina
+water bamboo
+water chestnut
+watercress
+watermelon
+wattle seed
+wax bean
+wedgefish
+wheat
+wheatgrass
+whelk
+whey
+whey protein
+whisky
+white bean
+white chocolate
+white fish
+white mugwort
+white nightshade
+white spotted greenling
+white water snowflake
+wild boar meat
+wine
+winter melon
+wood apple
+wood ear
+wood sorrel
+woodcock
+wrasse
+yabby
+yacon
+yam
+yanang
+yautia
+yeast
+yellow jack
+yellowtail
+yoghurt
+yucca
+zatar
+zedoary
+zucchini

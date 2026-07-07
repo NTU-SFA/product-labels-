@@ -1,0 +1,12 @@
+# Keep the build context lean: exclude generated outputs, caches, and archives.
+**/__pycache__
+**/*.pyc
+**/.DS_Store
+Assay_attr_Extraction_Codes/Outputs_*
+Assay_attr_Extraction_Codes/eval_product_label_output
+Assay_attr_Extraction_Codes/Outputs_hazard_eval_gt2024
+Outputs_*
+*.log
+.git
+.idea
+*.zip

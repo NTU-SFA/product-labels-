@@ -1,0 +1,78 @@
+{
+  "salmonella": {
+    "hazard_label": "Salmonella spp",
+    "hazard_category_label": "Salmonella spp"
+  },
+  "listeria": {
+    "hazard_label": "Listeria spp",
+    "hazard_category_label": "Listeria spp"
+  },
+  "clostridium": {
+    "hazard_label": "Clostridium spp",
+    "hazard_category_label": "Clostridium spp"
+  },
+  "campylobacter": {
+    "hazard_label": "Campylobacter spp",
+    "hazard_category_label": "Campylobacter spp"
+  },
+  "bacillu": {
+    "hazard_label": "Bacillus spp",
+    "hazard_category_label": "Bacillus spp"
+  },
+  "parasite": {
+    "hazard_label": "Parasitic infestation",
+    "hazard_category_label": "Parasitic infestation"
+  },
+  "unauthorised additive": {
+    "hazard_label": "Food additives",
+    "hazard_category_label": "Food additives"
+  },
+  "unauthorized additive": {
+    "hazard_label": "Food additives",
+    "hazard_category_label": "Food additives"
+  },
+  "unauthorised food additive": {
+    "hazard_label": "Food additives",
+    "hazard_category_label": "Food additives"
+  },
+  "unauthorized food additive": {
+    "hazard_label": "Food additives",
+    "hazard_category_label": "Food additives"
+  },
+  "feed additive": {
+    "hazard_label": "Feed additives",
+    "hazard_category_label": "Feed additives"
+  },
+  "mineral oil": {
+    "hazard_label": "Mineral oil",
+    "hazard_category_label": "Mineral oil"
+  },
+  "pesticida": {
+    "hazard_label": "Pesticide residues",
+    "hazard_category_label": "Pesticide residues"
+  },
+  "pesticide": {
+    "hazard_label": "Pesticide residues",
+    "hazard_category_label": "Pesticide residues"
+  },
+  "novel food": {
+    "hazard_label": "Novel food",
+    "hazard_category_label": "Novel food"
+  },
+  "novel ingredient": {
+    "hazard_label": "Novel food",
+    "hazard_category_label": "Novel food"
+  },
+  "novel unauthorised food": {
+    "hazard_label": "Novel food",
+    "hazard_category_label": "Novel food"
+  },
+  "novel non authorised food": {
+    "hazard_label": "Novel food",
+    "hazard_category_label": "Novel food"
+  },
+  "novel unauthorised ingredient": {
+    "hazard_label": "Novel food",
+    "hazard_category_label": "Novel food"
+  }
+}

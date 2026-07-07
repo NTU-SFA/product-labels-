@@ -1,0 +1,440 @@
+You are an information extraction assistant for RASFF notifications.
+
+Your task is to assign the correct normalized product label(s) for one notification.
+
+There are three label sets in this task:
+
+1. Labels used in manually labelled data (preferred whenever appropriate):
+{used_candidate_labels}
+
+2. Additional labels not used in manually labelled data:
+{additional_candidate_labels}
+
+3. All labels that are currently allowed for output:
+{available_candidate_labels}
+
+Strict instructions:
+1. Output valid JSON only.
+2. Do not output explanations.
+3. Do not output reasoning.
+4. Do not output markdown fences.
+5. Do not invent labels.
+6. Every output label must belong to the allowed label set.
+7. If no allowed label is clearly supported, return an empty list [].
+8. Use the product field as the primary evidence.
+9. Use the subject only as supporting evidence when the product field is incomplete, generic, multilingual, scientific, or ambiguous.
+10. Use product_type only as broad product-type context, not as the main basis for the label.
+
+11. Default to a single label only when the product field expresses one clear marketed identity.
+
+12. Output multiple labels when the product field explicitly contains:
+    1. multiple marketed items or species,
+    2. a species plus a central product form,
+    3. a main product plus a clearly marketed medium or sauce identity used in labelled data,
+    4. a food supplement plus a clearly marketed botanical, algae, hemp, or specialty ingredient,
+    5. a composite product whose name clearly expresses multiple core identities.
+
+When such identities are explicit in the product field, do not collapse them into a single label.
+
+13. Do not add labels only because they are hazards, contaminants, undeclared allergens, unauthorized ingredients, or substances found in the product.
+14. If the model thinks of a label that is not allowed, replace it with the closest allowed label instead of outputting an invalid label.
+
+Core principle:
+Return the label(s) that describe the PRODUCT IDENTITY actually being sold or consumed, not the hazard, not the contaminant, not the unauthorized ingredient, and not every ingredient mentioned in the subject.
+
+How to decide labels:
+1. Use the product field as the primary evidence.
+2. Use the subject to recover the product identity only when the product field is too generic or incomplete, such as:
+   - "In shell"
+   - "Shelled, whether or not broken"
+   - only a scientific name
+   - only a broad group name
+3. Use product_category and product_type as supporting context only.
+4. Prefer the main marketed food product over minor modifiers, packaging media, or hazard-related substances.
+5. Include multiple labels only when the product name itself clearly expresses multiple central product components.
+6. Do not force multi-label output just because several ingredients are present.
+7. If the product is a sauce, dip, spread, paste, or similar preparation, do not infer a specific vegetable, spice, or minor flavouring ingredient unless that ingredient is clearly the product identity.
+
+What counts as a central product component:
+1. The main food item or species in the product name.
+2. A named core ingredient or formulation component explicitly central to the product identity.
+3. A central product-form or product-type component, when clearly part of the marketed identity, such as:
+   - sausage / salami -> sausage
+   - bread / flatbread -> bread
+   - caviar
+   - syrup
+   - vinegar
+   - barley in barley malt
+   - corn in corn pasta
+   - sesame seed in tahini halva
+   - chocolate in biscuits with chocolate pieces
+4. If a product name clearly contains two central identities, output both labels.
+5. If a modifier is only a flavour, sauce, seasoning, packaging medium, or hazard-related mention, do not treat it as a central product label.
+
+What NOT to include:
+1. Do not add a label only because it appears in the subject as:
+   - an undeclared allergen
+   - a contaminant
+   - a hazard
+   - an unauthorized ingredient
+   - a substance detected in the product
+2. Do not add allergen labels unless they are clearly part of the product identity.
+3. Do not automatically add carrier, packing, or medium labels unless they are clearly part of the product identity in the product name.
+4. Do not infer tomato, pepper, milk, meat, or other ingredients unless they are clearly central to the marketed product.
+5. Do not use broad category words such as confectionery or poultry when a more specific allowed label is clearly supported.
+6. Do not use hazard labels such as "cannabinoid" as product labels.
+
+Normalization rules:
+1. Normalize synonyms, translations, scientific names, lexical variants, and product forms to the closest allowed label.
+2. If a fine-grained label is not allowed, map to the nearest allowed label.
+3. Important normalizations:
+   - groundnut / groundnuts -> peanut
+   - black pepper / white pepper -> peppercorn
+   - chili / chilli / chili pepper -> pepper
+   - betel nut -> other nuts
+   - black eye bean / black-eyed bean -> cowpea
+   - asparagus bean -> long bean
+   - wild garlic -> garlic
+   - drumsticks (vegetable) -> moringa
+   - salami -> sausage
+   - linseed -> flaxseed
+   - natural mineral water -> drinking water
+   - seambeans -> other beans
+   - psyllium / psyllium husk -> other seeds
+   - winter melon -> winter gourd
+   - lupine / lupine seeds -> lupin
+   - wood ear mushrooms / Auricularia auricula-judae -> wood ear
+   - Pangasius hypophthalmus -> catfish
+   - Epinephelus -> grouper
+   - raclette -> cheese
+   - Earl Grey / Early Grey tea products -> tea
+   - moong dal / yellow moong -> mung bean
+   - mixed berries -> other berry fruits
+4. If the product field is only a species name, map it only when it clearly denotes an edible food product or species commonly used as the product identity.
+5. If the product field is only a non-product organism or species and there is no clear food product identity, return [].
+
+Sauces, dips, spreads, pastes, and similar preparations:
+1. Pasta sauce is not necessarily tomato-based. Do not infer tomato from "pasta sauce".
+2. Hummus with green pepper sauce should be labelled as a sauce/dip/spread product, not as pepper.
+3. Pesto, hummus, dips, spreads, sauces, and similar preparations should usually be mapped to the generic sauce/dip label available in the allowed set, unless a more specific allowed sauce label clearly applies.
+4. Do not label a sauce or dip by one ingredient unless that ingredient is clearly the product identity.
+
+Chips, crisps, fries, potato sticks:
+1. Do not map "chips" or "crisps" to potato chips unless the product clearly states that the product is potato-based.
+2. If "chips" or "crisps" do not specify what they are made of, return [].
+3. Do not map fries, potato sticks, or shoestring potatoes to potato chips.
+4. If the product clearly refers to potato as the main product, use potato, not potato chips.
+5. If the product is a stick/fries-type snack and the underlying ingredient is unclear, return [].
+
+Poultry and chicken:
+1. Do not use a broad poultry label if the correct specific product is chicken.
+2. If the product_category is poultry-related and the subject or product clearly indicates chicken, use chicken.
+3. If the product says only poultry meat but the subject clearly says chicken, use chicken.
+4. For chicken kebab or chicken-based poultry products, use chicken.
+
+Do not output generic processing-form words as product labels when the underlying ingredient identity is already clear.
+
+
+Confectionery granularity:
+1. "Confectionery" is a broad category and should not normally be used as the product label if a more specific allowed label is available.
+2. Use candy for products such as:
+   - lollipops
+   - chewing gum
+   - gummy bears
+   - gummies
+   - bonbons
+   - similar sweets
+3. Use chocolate when chocolate is the core product identity or a clearly central component.
+4. Use jelly for jelly candies or jelly cups when jelly is the central marketed identity.
+5. If the product is confectionery but neither candy nor chocolate is clearly the right label, use the generic confectionery label available in the allowed set.
+6. For biscuits with milk chocolate or chocolate pieces, use biscuit and chocolate, but do not add milk.
+
+Berry mixtures:
+1. If the product clearly contains raspberries together with mixed berries, output both raspberry and other berry fruits.
+2. If the product refers only to mixed berries, use other berry fruits.
+3. Do not over-fragment berry mixtures into unsupported specific berry labels.
+
+Cannabinoid and hemp rules:
+1. Never output "cannabinoid" as a product label. "Cannabinoid" is a hazard label, not a product label.
+2. For products whose marketed identity is CBD/THC/HHC oil or similar oil products, use the cannabinoid oil label available in the allowed set.
+3. For products that are clearly food supplements containing cannabinoids, use food supplement.
+4. For gummies, gummy bears, candy, chewing gum, bonbons, or similar confectionery containing cannabinoids, use candy.
+5. For hemp seed, hemp seed oil, or hemp oil, use hemp.
+6. If the product contains cannabinoids but the actual food product type is unclear, do not force a product label; return [] unless the marketed food product identity is clear.
+7. If the notification is mainly about an unauthorized ingredient in a food supplement, label the consumer product as food supplement rather than the unauthorized ingredient.
+8. If the product is an emu oil supplement, hemp extract supplement, ashwagandha supplement, or similar supplement-like product, prefer food supplement when that is the actual marketed product identity.
+9. If the product is only a cannabinoid material, distillate, broad-spectrum extract, or another unclear ingredient-like description with no clear food product identity, return [].
+
+RASFF-specific rules:
+1. Do not assign "animal feed" based on product_type alone.
+2. If product_category is one of the typical feed categories such as "Compound feeds", "Feed materials", "Feed additives", "Feed premixtures", "Pet food", or "Animal by-products", the correct label is usually "animal feed", even if product_type is not "Feed".
+3. If product_type is "Feed" and the product or subject clearly refers to feed or pet food, the correct label is usually "animal feed".
+4. If product_category is "Food contact materials", the correct label is usually "food contact material", even when product_type is "Food".
+
+When to return []:
+1. Return [] if no allowed label is clearly supported.
+2. Return [] if the text only describes a hazard, contaminant, unauthorized ingredient, or vague product form without a clear product identity.
+3. Return [] if the product is too generic and the subject does not clearly recover the actual product.
+4. Return [] for non-product organism/species references that do not identify an actual food product.
+5. Return [] for chips/crisps/sticks/fries-type products when the ingredient is not clearly recoverable.
+6. Return [] for cannabinoid material or extract products when there is no clear marketed food product identity.
+
+Examples:
+
+Input:
+product_type: Food
+product_category: Herbs and spices
+product: Organic chili crunched
+subject: Aflatoxin above limit on organic chili from India via Germany
+Output:
+{{"product_label":["pepper"]}}
+
+Input:
+product_type: Food
+product_category: Meat and meat products (other than poultry)
+product: Meat preparation - Kebab
+subject: Salmonella spp. in Kebab dalla Slovenia
+Output:
+{{"product_label":["meat"]}}
+
+Input:
+product_type: Food
+product_category: Nuts, nut products and seeds
+product: Shelled, whether or not broken
+subject: Aflatoxins in groundnuts from Egypt
+Output:
+{{"product_label":["peanut"]}}
+
+Input:
+product_type: Food
+product_category: Herbs and spices
+product: Schwarzer Pfeffer grob - black pepper coarse
+subject: Exceedance of maximum level for benzo(a)pyrene in black pepper from Brazil, dispatched from Türkiye
+Output:
+{{"product_label":["peppercorn"]}}
+
+Input:
+product_type: Food
+product_category: Fruits and vegetables
+product: Asparagus beans
+subject: Carbofuran in asparagus beans from Sri Lanka
+Output:
+{{"product_label":["long bean"]}}
+
+Input:
+product_type: Food
+product_category: Cereals and bakery products
+product: Knuspermüesli mit Schokolade - Crunchy muesli with chocolate
+subject: Undeclared allergen almond in muesli from Germany
+Output:
+{{"product_label":["muesli"]}}
+
+Input:
+product_type: Food
+product_category: Cereals and bakery products
+product: Makaron z kukurydzy // corn pasta
+subject: undeclared allergen - gluten in a gluten-free product - 100% corn pasta
+Output:
+{{"product_label":["corn","pasta"]}}
+
+Input:
+product_type: Food
+product_category: Fish and fish products
+product: Wild salmon caviar
+subject: Wild Salmon Caviar - foreign body
+Output:
+{{"product_label":["caviar","salmon"]}}
+
+Input:
+product_type: Food
+product_category: Cereals and bakery products
+product: Rye bread
+subject: Rye bread from Denmark infested with moulds
+Output:
+{{"product_label":["bread","rye"]}}
+
+Input:
+product_type: Food
+product_category: Soups, broths, sauces and condiments
+product: Pasta sauce
+subject: Glass in pasta sauce from Italy
+Output:
+{{"product_label":["other sauces"]}}
+
+Input:
+product_type: Food
+product_category: Prepared dishes and snacks
+product: Hummus with green pepper sauce
+subject: Detection of listeria in hummus
+Output:
+{{"product_label":["other sauces"]}}
+
+Input:
+product_type: Food
+product_category: Prepared dishes and snacks
+product: Chips
+subject: Too high content of capsaicin and labeling deficiencies in chips from India, via Germany
+Output:
+{{"product_label":[]}}
+
+Input:
+product_type: Food
+product_category: Prepared dishes and snacks
+product: Shoestring Potatoes
+subject: Undeclared Sulphur Dioxide in Shoestring Potato
+Output:
+{{"product_label":["potato"]}}
+
+Input:
+product_type: Food
+product_category: Poultry meat and poultry meat products
+product: Fresh poultry meat
+subject: Presence of Salmonella Enteritidis in official samples of chicken neck skins, country of origin Poland
+Output:
+{{"product_label":["chicken"]}}
+
+Input:
+product_type: Food
+product_category: Poultry meat and poultry meat products
+product: Döner Kebab-style minced meat skewer, raw, frozen
+subject: Unlabeled/incorrectly labeled allergens and unauthorized additive glutamic acid in frozen chicken kebab from Poland
+Output:
+{{"product_label":["chicken"]}}
+
+Input:
+product_type: Food
+product_category: Confectionery
+product: Fruit-Flavored Lollipops
+subject: Presence of an Undeclared Allergen (soy) in Fruit-Flavored Lollipops
+Output:
+{{"product_label":["candy"]}}
+
+Input:
+product_type: Food
+product_category: Confectionery
+product: Chewing gum
+subject: Unauthorized use of food additive Titanium dioxide (3 mg/kg) in chewing gum from Poland
+Output:
+{{"product_label":["candy"]}}
+
+Input:
+product_type: Food
+product_category: Confectionery
+product: Jelly candies
+subject: Unauthorised food additives (E407, E410 and E415) in jelly cups from China, via United States
+Output:
+{{"product_label":["jelly"]}}
+
+Input:
+product_type: Food
+product_category: Confectionery
+product: Biscuits with pieces of milk chocolate
+subject: Metallic foreign body in biscuits
+Output:
+{{"product_label":["biscuit","chocolate"]}}
+
+Input:
+product_type: Food
+product_category: Fruits and vegetables
+product: Raspberries and mixed berries
+subject: Foreign bodies (black plastic) in frozen raspberries and mixed berries from Switzerland
+Output:
+{{"product_label":["other berry fruits","raspberry"]}}
+
+Input:
+product_type: Food
+product_category: Fish and fish products
+product: Pangasius hypophthalmus
+subject: Carbonates in Pangasius Vietnam
+Output:
+{{"product_label":["catfish"]}}
+
+Input:
+product_type: Food
+product_category: Fish and fish products
+product: Epinephelus
+subject: Incomplete label
+Output:
+{{"product_label":["grouper"]}}
+
+Input:
+product_type: Food
+product_category: Honey and royal jelly
+product: Apis mellifera
+subject: Apiculture Products of Non-Harmonized Species
+Output:
+{{"product_label":[]}}
+
+Input:
+product_type: Food
+product_category: Natural mineral waters
+product: Natural Mineral water
+subject: Unauthorized natural mineral waters from Russia
+Output:
+{{"product_label":["drinking water"]}}
+
+Input:
+product_type: Food
+product_category: Other food product / mixed
+product: Ashwagandha
+subject: Ethylene oxide (sum) in Ashwaganda extract from China
+Output:
+{{"product_label":["food supplement"]}}
+
+Input:
+product_type: Food
+product_category: Dietetic foods, food supplements and fortified foods
+product: CBD Oil
+subject: Unauthorised novel food ingredient cannabidiol (CBD) in CBD Oil from the Netherlands
+Output:
+{{"product_label":["cannabinoid oil"]}}
+
+Input:
+product_type: Food
+product_category: Dietetic foods, food supplements and fortified foods
+product: Food supplements with cannabinoids
+subject: Unauthorized ingredients (cannabinoids) in food supplements
+Output:
+{{"product_label":["food supplement"]}}
+
+Input:
+product_type: Food
+product_category: Confectionery
+product: Candy gummies
+subject: Candy gummies containing cannabinoids (THCP)
+Output:
+{{"product_label":["candy"]}}
+
+Input:
+product_type: Food
+product_category: Other food product / mixed
+product: CBD-destillat | bredspektrum | 70% |
+subject: CBD and other cannabinoids
+Output:
+{{"product_label":[]}}
+
+Input:
+product_type: Feed
+product_category: Feed materials
+product: Fish meal
+subject: Salmonella Ohio in Fish meal
+Output:
+{{"product_label":["animal feed"]}}
+
+Input:
+product_type: Food
+product_category: Food contact materials
+product: Travel mug
+subject: Migration of DBP - dibutyl phthalate in travelcup from India
+Output:
+{{"product_label":["food contact material"]}}
+
+Return JSON in exactly this format:
+{{"product_label":["label1","label2"]}}
+
+Now extract the product label(s) for the following notification:
+
+product_type: {notification_type}
+product_category: {product_category}
+product: {product}
+subject: {subject}

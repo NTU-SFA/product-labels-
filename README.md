@@ -1,22 +1,65 @@
 # product-labels-
-Codes and results
-I have attached the product label extraction/Hazard Attribute Extraction and Hazard Labelling results for the first batch data. 
 
-Product label extraction:
+Product-label extraction and hazard attribute/labelling for RASFF food-recall notifications,
+using Claude on Amazon Bedrock (product/no-hazard records) plus a rule engine (has-hazard records).
 
-revised prompt: product_label_prompt_V3.txt
+## Pipeline
 
-test 400 ground-truth samples: Claude_product_label.py
+**Product-label extraction** — prompt: `product_label_prompt_V3.txt`
+- test on 2024 ground truth (Precision/Recall/F1): **`Assay_attr_Extraction_Codes/evaluate_product_label.py`**
+- predict on the 2024 batch files: **`Assay_attr_Extraction_Codes/Claude_eval.py`**
 
-predict the 6 batch samples: Claude_eval.py
+**Hazard attribute extraction & labelling**
+- test on 2024 ground truth: **`Assay_attr_Extraction_Codes/hazard_eval_gt2024.py`**
+- predict on the 2024 batch files (rule-only): **`Assay_attr_Extraction_Codes/hazard_eval.py`**
 
-Product label: rasff_data_2024_batch1_with_predicted_product_label.json
+Example results are included at the repo root (`rasff_data_2024_batch1_with_predicted_product_label.json`,
+`rasff_batch_1_hazard.json`).
 
+## Run with Docker (recommended)
 
-Hazard Attribute Extraction and Hazard Labelling codes:
+Everything (code, prompts, data) is bundled, so it installs and runs anywhere — no manual
+dependency setup. See **[`README_docker.md`](README_docker.md)** for full details.
 
-test 1000 ground-truth samples: hazard.py
+```bash
+docker build -t rasff_labels .
 
-predict the 6 batch samples: hzard_eval.py
+docker run --rm rasff_labels                          # 2024 product-label test (default)
+docker run --rm rasff_labels test-product --limit 20  # quick product test
+docker run --rm rasff_labels test-hazard              # 2024 hazard test
+docker run --rm rasff_labels predict-product          # product predict on 2024 batch
+docker run --rm rasff_labels predict-hazard           # hazard predict (rule-only, no token needed)
+```
 
-Hazard Attribute Extraction and Hazard Labelling results: rasff_batch_1_hazard.json
+Bedrock credentials are **not** committed. Pass your token at run time (region `ap-southeast-1`,
+model `global.anthropic.claude-sonnet-4-6`):
+
+```bash
+docker run --rm -e AWS_BEARER_TOKEN_BEDROCK="<your-token>" rasff_labels
+```
+
+## Run locally (without Docker)
+
+The scripts auto-detect the repo root, so from the repo directory:
+
+```bash
+pip install -r Assay_attr_Extraction_Codes/requirements.txt
+export AWS_BEARER_TOKEN_BEDROCK="<your-token>"   # not needed for hazard_eval.py (rule-only)
+
+python Assay_attr_Extraction_Codes/evaluate_product_label.py --limit 20
+python Assay_attr_Extraction_Codes/hazard_eval.py
+```
+
+## Layout
+
+```
+.
+├── Assay_attr_Extraction_Codes/   # 4 pipeline scripts + imported helpers + prompts/config + requirements
+├── FIND-food-recall-data-main_V2/ # product_labels.txt + 2024 batch files
+├── hazard/                        # hazard gold + mapping JSON
+├── rasff_2024_ground_truth_labels.json   # 2024 ground truth (used by the two test scripts)
+├── Dockerfile, .dockerignore, README_docker.md
+└── (original flat scripts / example result JSONs kept at the root)
+```
+
+All paths derive from `RASFF_ROOT` (the repo root locally; `/app` inside the Docker image).

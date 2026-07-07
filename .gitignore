@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.DS_Store
+Assay_attr_Extraction_Codes/Outputs_*
+Assay_attr_Extraction_Codes/eval_product_label_output/

@@ -1,0 +1,10 @@
+# RASFF information-extraction pipeline (product_label + hazard) — runtime deps.
+# Versions pinned to what the code was developed/tested against.
+# langchain-aws pulls in boto3/botocore + langchain-core, but we pin them
+# explicitly so the image is reproducible.
+
+langchain-aws==1.5.1
+langchain-core==1.4.7
+boto3==1.43.32
+botocore==1.43.32
+tqdm==4.67.1

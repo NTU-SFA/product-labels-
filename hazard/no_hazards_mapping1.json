@@ -1,0 +1,1518 @@
+{
+  "noroviru": {
+    "hazard_label": "Norovirus",
+    "hazard_category_label": "Norovirus"
+  },
+  "rotaviru": {
+    "hazard_label": "Rotavirus",
+    "hazard_category_label": "Rotavirus"
+  },
+  "hepatiti a": {
+    "hazard_label": "Hepatitis A virus",
+    "hazard_category_label": "Hepatitis A virus"
+  },
+  "hepatiti e": {
+    "hazard_label": "Hepatitis E virus",
+    "hazard_category_label": "Hepatitis E virus"
+  },
+  "listeria monocytogene": {
+    "hazard_label": "Listeria monocytogenes",
+    "hazard_category_label": "Listeria spp"
+  },
+  "l monocytogene": {
+    "hazard_label": "Listeria monocytogenes",
+    "hazard_category_label": "Listeria spp"
+  },
+  "clostridium botulinum": {
+    "hazard_label": "Clostridium botulinum",
+    "hazard_category_label": "Clostridium spp"
+  },
+  "clostridium perfringen": {
+    "hazard_label": "Clostridium perfringen",
+    "hazard_category_label": "Clostridium spp"
+  },
+  "salmonella enteritidi": {
+    "hazard_label": "Salmonella enteritidis",
+    "hazard_category_label": "Salmonella spp"
+  },
+  "salmonella infanti": {
+    "hazard_label": "Salmonella infantis",
+    "hazard_category_label": "Salmonella spp"
+  },
+  "salmonella typhimurium": {
+    "hazard_label": "Salmonella typhimurium",
+    "hazard_category_label": "Salmonella spp"
+  },
+  "bacillu cereu": {
+    "hazard_label": "Bacillus cereus",
+    "hazard_category_label": "Bacillus spp"
+  },
+  "escherichia coli": {
+    "hazard_label": "Escherichia coli",
+    "hazard_category_label": "Escherichia coli"
+  },
+  "e coli": {
+    "hazard_label": "Escherichia coli",
+    "hazard_category_label": "Escherichia coli"
+  },
+  "stec": {
+    "hazard_label": "Escherichia coli",
+    "hazard_category_label": "Escherichia coli"
+  },
+  "etec": {
+    "hazard_label": "Escherichia coli",
+    "hazard_category_label": "Escherichia coli"
+  },
+  "epec": {
+    "hazard_label": "Escherichia coli",
+    "hazard_category_label": "Escherichia coli"
+  },
+  "eaec": {
+    "hazard_label": "Escherichia coli",
+    "hazard_category_label": "Escherichia coli"
+  },
+  "ehec": {
+    "hazard_label": "Escherichia coli",
+    "hazard_category_label": "Escherichia coli"
+  },
+  "mold": {
+    "hazard_label": "Mould",
+    "hazard_category_label": "Mould"
+  },
+  "mould": {
+    "hazard_label": "Mould",
+    "hazard_category_label": "Mould"
+  },
+  "moldy": {
+    "hazard_label": "Mould",
+    "hazard_category_label": "Mould"
+  },
+  "mouldy": {
+    "hazard_label": "Mould",
+    "hazard_category_label": "Mould"
+  },
+  "anisaki": {
+    "hazard_label": "Anisakis",
+    "hazard_category_label": "Parasitic infestation"
+  },
+  "yeast": {
+    "hazard_label": "Yeast",
+    "hazard_category_label": "Yeast"
+  },
+  "cereulide": {
+    "hazard_label": "Cereulide",
+    "hazard_category_label": "Cereulide"
+  },
+  "aflatoxin": {
+    "hazard_label": "Aflatoxins",
+    "hazard_category_label": "Aflatoxins"
+  },
+  "ochratoxin": {
+    "hazard_label": "Ochratoxin A",
+    "hazard_category_label": "Ochratoxin A"
+  },
+  "fumonisin": {
+    "hazard_label": "Fumonisins",
+    "hazard_category_label": "Fumonisins"
+  },
+  "tenuazonic acid": {
+    "hazard_label": "Tenuazonic acid",
+    "hazard_category_label": "Tenuazonic acid"
+  },
+  "deoxynivalenol": {
+    "hazard_label": "Deoxynivalenol",
+    "hazard_category_label": "Deoxynivalenol"
+  },
+  "zearalenone": {
+    "hazard_label": "Zearalenone",
+    "hazard_category_label": "Zearalenone"
+  },
+  "alternariol": {
+    "hazard_label": "Alternariol",
+    "hazard_category_label": "Alternariol"
+  },
+  "alternariol monomethyl ether": {
+    "hazard_label": "Alternariol monomethyl ether",
+    "hazard_category_label": "Alternariol monomethyl ether"
+  },
+  "citrinin": {
+    "hazard_label": "Citrinin",
+    "hazard_category_label": "Citrinin"
+  },
+  "patulin": {
+    "hazard_label": "Patulin",
+    "hazard_category_label": "Patulin"
+  },
+  "t 2 toxin": {
+    "hazard_label": "T-2 toxin",
+    "hazard_category_label": "T-2 toxin"
+  },
+  "amnesic shellfish poisoning": {
+    "hazard_label": "Amnesic Shellfish Poisoning (ASP) toxins",
+    "hazard_category_label": "Amnesic Shellfish Poisoning (ASP) toxins"
+  },
+  "domoic acid": {
+    "hazard_label": "Amnesic Shellfish Poisoning (ASP) toxins",
+    "hazard_category_label": "Amnesic Shellfish Poisoning (ASP) toxins"
+  },
+  "azaspiracid shellfish poisoning": {
+    "hazard_label": "Azaspiracid Shellfish Poisoning (AZP) toxins",
+    "hazard_category_label": "Azaspiracid Shellfish Poisoning (AZP) toxins"
+  },
+  "diarrhoeic shellfish poisoning": {
+    "hazard_label": "Diarrhoeic Shellfish Poisoning (DSP) toxins",
+    "hazard_category_label": "Diarrhoeic Shellfish Poisoning (DSP) toxins"
+  },
+  "okadaic acid": {
+    "hazard_label": "Diarrhoeic Shellfish Poisoning (DSP) toxins",
+    "hazard_category_label": "Diarrhoeic Shellfish Poisoning (DSP) toxins"
+  },
+  "paralytic shellfish poisoning": {
+    "hazard_label": "Paralytic Shellfish Poisoning (PSP) toxins",
+    "hazard_category_label": "Paralytic Shellfish Poisoning (PSP) toxins"
+  },
+  "lipophilic toxin": {
+    "hazard_label": "Lipophilic toxins",
+    "hazard_category_label": "Lipophilic toxins"
+  },
+  "ciguatera poisoning": {
+    "hazard_label": "Ciguatoxins",
+    "hazard_category_label": "Ciguatoxins"
+  },
+  "ergot": {
+    "hazard_label": "Ergot alkaloids",
+    "hazard_category_label": "Ergot alkaloids"
+  },
+  "clavicep purpurea": {
+    "hazard_label": "Ergot alkaloids",
+    "hazard_category_label": "Ergot alkaloids"
+  },
+  "ergot alkaloid": {
+    "hazard_label": "Ergot alkaloids",
+    "hazard_category_label": "Ergot alkaloids"
+  },
+  "tropane alkaloid": {
+    "hazard_label": "Tropane alkaloids",
+    "hazard_category_label": "Tropane alkaloids"
+  },
+  "molybdenum": {
+    "hazard_label": "Molybdenum",
+    "hazard_category_label": "Molybdenum"
+  },
+  "boron": {
+    "hazard_label": "Boron",
+    "hazard_category_label": "Boron"
+  },
+  "chromium": {
+    "hazard_label": "Chromium",
+    "hazard_category_label": "Chromium"
+  },
+  "arsenic": {
+    "hazard_label": "Arsenic",
+    "hazard_category_label": "Arsenic"
+  },
+  "cadmium": {
+    "hazard_label": "Cadmium",
+    "hazard_category_label": "Cadmium"
+  },
+  "mercury": {
+    "hazard_label": "Mercury",
+    "hazard_category_label": "Mercury"
+  },
+  "presence of lead": {
+    "hazard_label": "Lead",
+    "hazard_category_label": "Lead"
+  },
+  "lead exceedance": {
+    "hazard_label": "Lead",
+    "hazard_category_label": "Lead"
+  },
+  "lead above legal limit": {
+    "hazard_label": "Lead",
+    "hazard_category_label": "Lead"
+  },
+  "increased lead content": {
+    "hazard_label": "Lead",
+    "hazard_category_label": "Lead"
+  },
+  "high lead content": {
+    "hazard_label": "Lead",
+    "hazard_category_label": "Lead"
+  },
+  "lead in": {
+    "hazard_label": "Lead",
+    "hazard_category_label": "Lead"
+  },
+  "mineral oil aromatic hydrocarbon": {
+    "hazard_label": "Mineral oil aromatic hydrocarbons (MOAH)",
+    "hazard_category_label": "Mineral oil"
+  },
+  "mineral oil saturated hydrocarbon": {
+    "hazard_label": "Mineral oil saturated hydrocarbons (MOSH)",
+    "hazard_category_label": "Mineral oil"
+  },
+  "moah": {
+    "hazard_label": "Mineral oil aromatic hydrocarbons (MOAH)",
+    "hazard_category_label": "Mineral oil"
+  },
+  "mosh": {
+    "hazard_label": "Mineral oil saturated hydrocarbons (MOSH)",
+    "hazard_category_label": "Mineral oil"
+  },
+  "dioxin": {
+    "hazard_label": "Dioxins",
+    "hazard_category_label": "Dioxins"
+  },
+  "irradiation": {
+    "hazard_label": "Irradiation",
+    "hazard_category_label": "Radiation"
+  },
+  "suffocation risk": {
+    "hazard_label": "Suffocation risk",
+    "hazard_category_label": "Suffocation risk"
+  },
+  "5 hydroxytryptophan": {
+    "hazard_label": "5-hydroxytryptophan (5-HTP)",
+    "hazard_category_label": "5-hydroxytryptophan (5-HTP)"
+  },
+  "5 htp": {
+    "hazard_label": "5-hydroxytryptophan (5-HTP)",
+    "hazard_category_label": "5-hydroxytryptophan (5-HTP)"
+  },
+  "muscimol": {
+    "hazard_label": "Muscimol",
+    "hazard_category_label": "Muscimol"
+  },
+  "iodine": {
+    "hazard_label": "Iodine",
+    "hazard_category_label": "Iodine"
+  },
+  "caffeine": {
+    "hazard_label": "Caffeine",
+    "hazard_category_label": "Caffeine"
+  },
+  "synephrine": {
+    "hazard_label": "Synephrine",
+    "hazard_category_label": "Synephrine"
+  },
+  "srm": {
+    "hazard_label": "Specified risk material (SRM)",
+    "hazard_category_label": "Specified risk material (SRM)"
+  },
+  "aloin": {
+    "hazard_label": "Aloin",
+    "hazard_category_label": "Aloin"
+  },
+  "melamine": {
+    "hazard_label": "Melamine",
+    "hazard_category_label": "Melamine"
+  },
+  "formaldehyde": {
+    "hazard_label": "Formaldehyde",
+    "hazard_category_label": "Formaldehyde"
+  },
+  "histamin": {
+    "hazard_label": "Histamine",
+    "hazard_category_label": "Histamine"
+  },
+  "histamine": {
+    "hazard_label": "Histamine",
+    "hazard_category_label": "Histamine"
+  },
+  "melatonin": {
+    "hazard_label": "Melatonin",
+    "hazard_category_label": "Melatonin"
+  },
+  "sildenafil": {
+    "hazard_label": "Sildenafil",
+    "hazard_category_label": "Sildenafil"
+  },
+  "piperine": {
+    "hazard_label": "Piperine",
+    "hazard_category_label": "Piperine"
+  },
+  "rauwolfia": {
+    "hazard_label": "Rauwolfia spp",
+    "hazard_category_label": "Rauwolfia spp"
+  },
+  "huperzine a": {
+    "hazard_label": "Huperzine A",
+    "hazard_category_label": "Huperzine A"
+  },
+  "yohimbe": {
+    "hazard_label": "Yohimbine",
+    "hazard_category_label": "Yohimbine"
+  },
+  "yohimbine": {
+    "hazard_label": "Yohimbine",
+    "hazard_category_label": "Yohimbine"
+  },
+  "ethylene oxide": {
+    "hazard_label": "Ethylene oxide",
+    "hazard_category_label": "Pesticide residues"
+  },
+  "ethylene oxyde": {
+    "hazard_label": "Ethylene oxide",
+    "hazard_category_label": "Pesticide residues"
+  },
+  "etylene oxide": {
+    "hazard_label": "Ethylene oxide",
+    "hazard_category_label": "Pesticide residues"
+  },
+  "chlorpyrifo": {
+    "hazard_label": "Chlorpyrifos",
+    "hazard_category_label": "Pesticide residues"
+  },
+  "cannabinoid": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "cannabi sativa": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "cbd": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "cannabidiol": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "cbn": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "cannabinol": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "hhc": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "hexahydrocannabinol": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "thc": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "tetrahydrocannabinol": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "thcp": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "tetrahydrocannabiphorol": {
+    "hazard_label": "Cannabinoid",
+    "hazard_category_label": "Novel food"
+  },
+  "ashwagandha": {
+    "hazard_label": "Ashwagandha",
+    "hazard_category_label": "Ashwagandha"
+  },
+  "withania somnifera": {
+    "hazard_label": "Ashwagandha",
+    "hazard_category_label": "Ashwagandha"
+  },
+  "clitoria ternatea": {
+    "hazard_label": "Clitoria ternatea",
+    "hazard_category_label": "Novel food"
+  },
+  "tongkat ali": {
+    "hazard_label": "Tongkat ali (Eurycoma longifolia)",
+    "hazard_category_label": "Novel food"
+  },
+  "eurycoma longifolia": {
+    "hazard_label": "Tongkat ali (Eurycoma longifolia)",
+    "hazard_category_label": "Novel food"
+  },
+  "allergen": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared almond": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared cashew": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared celery": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared milk": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared crustacean": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared sulphur dioxide": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared sulphite": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared egg": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared fish": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared gluten": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared hazelnut": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared lactoprotein": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared lactose": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared lupin": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared mollusc": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared mustard": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared nut": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared peanut": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared pistachio": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared sesame": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared shellfish": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared soya": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared soy": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared tree nut": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared walnut": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared wheat": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "undeclared barley": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "almond undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "cashew undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "cashew nut undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "celery undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "milk undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "milk ingredient undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "crustacean undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "sulphur dioxide undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "egg undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "fish undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "gluten undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "hazelnut undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "lactoprotein undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "lactose undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "lupin undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "mollusc undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "mustard undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "peanut undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "pistachio undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "sesame undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "shellfish undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "soya undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "soy undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "sulphite undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "tree nut undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "walnut undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "wheat undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "barley undeclared": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "soya not mentioned": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "soy not mentioned": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "sulphite not mentioned": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "tree nut not mentioned": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "walnut not mentioned": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "wheat not mentioned": {
+    "hazard_label": "Allergens",
+    "hazard_category_label": "Allergens"
+  },
+  "bamboo fiber": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "bamboo fibre": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "bamboo powder": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "bamboo and maize fiber": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "bamboo and maize fibre": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "plant fiber bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "plant fibre bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "unauthorised use of bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "unauthorized use of bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "unauthorised bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "unauthorized bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "bamboo in plastic": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "presence of bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "bamboo melamine": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "melamine bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "bamboo and melamine": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "melamine and bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "bamboo with melamine": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "melamine with bamboo": {
+    "hazard_label": "Bamboo",
+    "hazard_category_label": "Bamboo"
+  },
+  "rice husk": {
+    "hazard_label": "Rice husk",
+    "hazard_category_label": "Rice husk"
+  },
+  "foreign body": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "foreign bodie": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "foreign object": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "foreign matter": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "foreign particle": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "dead insect": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "live insect": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "insect larva": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "insect larvae": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "presence of insect": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "infested with insect": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "insect infestation": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "presence of metal": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "presence of plastic": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "presence of glas": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "piece of glas in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "piece of metal in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "piece of plastic in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "glas fragment in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "metal fragment in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "plastic fragment in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "glas particle in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "metal particle in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "plastic particle in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "glas piece in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "metal piece in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "plastic piece in": {
+    "hazard_label": "Foreign bodies",
+    "hazard_category_label": "Foreign bodies"
+  },
+  "organoleptic": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "abnormal colour": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "abnormal smell": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "strong smell": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "ammonia smell": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "abnormal taste": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "strong chemical taste": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "deterioration": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "spoilage": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "putrefaction": {
+    "hazard_label": "Organoleptic aspects",
+    "hazard_category_label": "Organoleptic aspects"
+  },
+  "illegal import": {
+    "hazard_label": "Illegal import",
+    "hazard_category_label": "Illegal import"
+  },
+  "illegally import": {
+    "hazard_label": "Illegal import",
+    "hazard_category_label": "Illegal import"
+  },
+  "damaged packaging": {
+    "hazard_label": "Packaging",
+    "hazard_category_label": "Packaging"
+  },
+  "packaging problem": {
+    "hazard_label": "Packaging",
+    "hazard_category_label": "Packaging"
+  },
+  "packaging leaking": {
+    "hazard_label": "Packaging",
+    "hazard_category_label": "Packaging"
+  },
+  "faulty seam": {
+    "hazard_label": "Packaging",
+    "hazard_category_label": "Packaging"
+  },
+  "bulging and leaking package": {
+    "hazard_label": "Packaging",
+    "hazard_category_label": "Packaging"
+  },
+  "bombage": {
+    "hazard_label": "Packaging",
+    "hazard_category_label": "Packaging"
+  },
+  "bulging packaging": {
+    "hazard_label": "Packaging",
+    "hazard_category_label": "Packaging"
+  },
+  "poor temperature control": {
+    "hazard_label": "Temperature control",
+    "hazard_category_label": "Temperature control"
+  },
+  "temperature failure": {
+    "hazard_label": "Temperature control",
+    "hazard_category_label": "Temperature control"
+  },
+  "cold chain": {
+    "hazard_label": "Temperature control",
+    "hazard_category_label": "Temperature control"
+  },
+  "rotura cadena": {
+    "hazard_label": "Temperature control",
+    "hazard_category_label": "Temperature control"
+  },
+  "rotura de cadena": {
+    "hazard_label": "Temperature control",
+    "hazard_category_label": "Temperature control"
+  },
+  "rotura de la cadena": {
+    "hazard_label": "Temperature control",
+    "hazard_category_label": "Temperature control"
+  },
+  "ruptura cadena": {
+    "hazard_label": "Temperature control",
+    "hazard_category_label": "Temperature control"
+  },
+  "ruptura de cadena": {
+    "hazard_label": "Temperature control",
+    "hazard_category_label": "Temperature control"
+  },
+  "ruptura de la cadena": {
+    "hazard_label": "Temperature control",
+    "hazard_category_label": "Temperature control"
+  },
+  "labeling": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "labelling": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "mislabelled": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "mislabelling": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "unlabelled": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "mislabeled": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "mislabeling": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "unlabeled": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "identification mark": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "incorrect expiry date": {
+    "hazard_label": "Labelling",
+    "hazard_category_label": "Labelling"
+  },
+  "unauthorized additive in complementary feed": {
+    "hazard_label": "Feed additives",
+    "hazard_category_label": "Feed additives"
+  },
+  "unauthorised additive in poultry feed": {
+    "hazard_label": "Feed additives",
+    "hazard_category_label": "Feed additives"
+  },
+  "unauthorized additive in petfood": {
+    "hazard_label": "Feed additives",
+    "hazard_category_label": "Feed additives"
+  },
+  "unauthorized additive in feed": {
+    "hazard_label": "Feed additives",
+    "hazard_category_label": "Feed additives"
+  },
+  "e100": {
+    "hazard_label": "E100 Curcumin",
+    "hazard_category_label": "Food additives"
+  },
+  "e102": {
+    "hazard_label": "E102 Tartrazine",
+    "hazard_category_label": "Food additives"
+  },
+  "e110": {
+    "hazard_label": "E110 Sunset Yellow FCF",
+    "hazard_category_label": "Food additives"
+  },
+  "e120": {
+    "hazard_label": "E120 Cochineal",
+    "hazard_category_label": "Food additives"
+  },
+  "e122": {
+    "hazard_label": "E122 Carmoisine",
+    "hazard_category_label": "Food additives"
+  },
+  "e127": {
+    "hazard_label": "E127 Erythrosine",
+    "hazard_category_label": "Food additives"
+  },
+  "e133": {
+    "hazard_label": "E133 Brilliant Blue FCF",
+    "hazard_category_label": "Food additives"
+  },
+  "e171": {
+    "hazard_label": "E171 Titanium dioxide",
+    "hazard_category_label": "Food additives"
+  },
+  "e150c": {
+    "hazard_label": "E150c Caramel colours",
+    "hazard_category_label": "Food additives"
+  },
+  "e150d": {
+    "hazard_label": "E150d Caramel colours",
+    "hazard_category_label": "Food additives"
+  },
+  "e104": {
+    "hazard_label": "E104 Quinoline Yellow",
+    "hazard_category_label": "Food additives"
+  },
+  "e123": {
+    "hazard_label": "E123 Amaranth",
+    "hazard_category_label": "Food additives"
+  },
+  "e124": {
+    "hazard_label": "E124 Ponceau 4R",
+    "hazard_category_label": "Food additives"
+  },
+  "e129": {
+    "hazard_label": "E129 Allura Red AC",
+    "hazard_category_label": "Food additives"
+  },
+  "e132": {
+    "hazard_label": "E132 Indigotine",
+    "hazard_category_label": "Food additives"
+  },
+  "e143": {
+    "hazard_label": "E143 Fast Green FCF",
+    "hazard_category_label": "Food additives"
+  },
+  "e160b": {
+    "hazard_label": "E160b Annatto",
+    "hazard_category_label": "Food additives"
+  },
+  "e1520": {
+    "hazard_label": "E1520 Propylene glycol",
+    "hazard_category_label": "Food additives"
+  },
+  "e200": {
+    "hazard_label": "E200 Sorbic acid",
+    "hazard_category_label": "Food additives"
+  },
+  "e202": {
+    "hazard_label": "E202 Potassium sorbate",
+    "hazard_category_label": "Food additives"
+  },
+  "e210": {
+    "hazard_label": "E210 Benzoic acid",
+    "hazard_category_label": "Food additives"
+  },
+  "e211": {
+    "hazard_label": "E211 Sodium benzoate",
+    "hazard_category_label": "Food additives"
+  },
+  "e220": {
+    "hazard_label": "E220 Sulphur dioxide",
+    "hazard_category_label": "Food additives"
+  },
+  "e250": {
+    "hazard_label": "E250 Sodium nitrite",
+    "hazard_category_label": "Food additives"
+  },
+  "e251": {
+    "hazard_label": "E251 Sodium nitrate",
+    "hazard_category_label": "Food additives"
+  },
+  "e231": {
+    "hazard_label": "E231 Orthophenylphenol",
+    "hazard_category_label": "Food additives"
+  },
+  "e235": {
+    "hazard_label": "E235 Natamycin",
+    "hazard_category_label": "Food additives"
+  },
+  "e280": {
+    "hazard_label": "E280 Propionic acid",
+    "hazard_category_label": "Food additives"
+  },
+  "e297": {
+    "hazard_label": "E297 Fumaric acid",
+    "hazard_category_label": "Food additives"
+  },
+  "e300": {
+    "hazard_label": "E300 Ascorbic acid",
+    "hazard_category_label": "Food additives"
+  },
+  "e316": {
+    "hazard_label": "E316 Sodium erythorbate",
+    "hazard_category_label": "Food additives"
+  },
+  "e321": {
+    "hazard_label": "E321 Butylated hydroxytoluene (BHT)",
+    "hazard_category_label": "Food additives"
+  },
+  "e385": {
+    "hazard_label": "E385 Calcium disodium EDTA",
+    "hazard_category_label": "Food additives"
+  },
+  "e407": {
+    "hazard_label": "E407 Carrageenan",
+    "hazard_category_label": "Food additives"
+  },
+  "e410": {
+    "hazard_label": "E410 Locust bean gum",
+    "hazard_category_label": "Food additives"
+  },
+  "e412": {
+    "hazard_label": "E412 Guar gum",
+    "hazard_category_label": "Food additives"
+  },
+  "e415": {
+    "hazard_label": "E415 Xanthan gum",
+    "hazard_category_label": "Food additives"
+  },
+  "e417": {
+    "hazard_label": "E417 Tara gum",
+    "hazard_category_label": "Food additives"
+  },
+  "e440": {
+    "hazard_label": "E440 Pectin",
+    "hazard_category_label": "Food additives"
+  },
+  "e422": {
+    "hazard_label": "E422 Glycerol",
+    "hazard_category_label": "Food additives"
+  },
+  "e425": {
+    "hazard_label": "E425 Konjac",
+    "hazard_category_label": "Food additives"
+  },
+  "e452": {
+    "hazard_label": "E452 Polyphosphates",
+    "hazard_category_label": "Food additives"
+  },
+  "e476": {
+    "hazard_label": "E476 Polyglycerol polyricinoleate (PGPR)",
+    "hazard_category_label": "Food additives"
+  },
+  "e500": {
+    "hazard_label": "E500 Sodium carbonates",
+    "hazard_category_label": "Food additives"
+  },
+  "e586": {
+    "hazard_label": "E586 4-Hexylresorcinol",
+    "hazard_category_label": "Food additives"
+  },
+  "e620": {
+    "hazard_label": "E620 Glutamic acid",
+    "hazard_category_label": "Food additives"
+  },
+  "e621": {
+    "hazard_label": "E621 Monosodium glutamate",
+    "hazard_category_label": "Food additives"
+  },
+  "e635": {
+    "hazard_label": "E635 Disodium ribonucleotides",
+    "hazard_category_label": "Food additives"
+  },
+  "e950": {
+    "hazard_label": "E950 Acesulfame K",
+    "hazard_category_label": "Food additives"
+  },
+  "e951": {
+    "hazard_label": "E951 Aspartame",
+    "hazard_category_label": "Food additives"
+  },
+  "e952": {
+    "hazard_label": "E952 Cyclamic acid",
+    "hazard_category_label": "Food additives"
+  },
+  "e954": {
+    "hazard_label": "E954 Saccharin",
+    "hazard_category_label": "Food additives"
+  },
+  "e955": {
+    "hazard_label": "E955 Sucralose",
+    "hazard_category_label": "Food additives"
+  },
+  "e905": {
+    "hazard_label": "E905 Microcrystalline wax",
+    "hazard_category_label": "Food additives"
+  },
+  "e554": {
+    "hazard_label": "E554 sodium aluminium silicate",
+    "hazard_category_label": "Food additives"
+  },
+  "benzoyl peroxide": {
+    "hazard_label": "E928 benzoyl peroxide",
+    "hazard_category_label": "Food additives"
+  },
+  "titanium dioxide": {
+    "hazard_label": "E171 titanium dioxide",
+    "hazard_category_label": "Food additives"
+  },
+  "benzoic acid": {
+    "hazard_label": "E210 benzoic acid",
+    "hazard_category_label": "Food additives"
+  },
+  "sulphur dioxide": {
+    "hazard_label": "E220 Sulphur dioxide",
+    "hazard_category_label": "Food additives"
+  },
+  "sulfur dioxide": {
+    "hazard_label": "E220 Sulphur dioxide",
+    "hazard_category_label": "Food additives"
+  },
+  "e101": {
+    "hazard_label": "E101 Riboflavin",
+    "hazard_category_label": "Food additives"
+  },
+  "e160a": {
+    "hazard_label": "E160a Carotenes",
+    "hazard_category_label": "Food additives"
+  },
+  "e160c": {
+    "hazard_label": "E160c Capsanthin",
+    "hazard_category_label": "Food additives"
+  },
+  "e160d": {
+    "hazard_label": "E160d Lycopene",
+    "hazard_category_label": "Food additives"
+  },
+  "e162": {
+    "hazard_label": "E162 Beetroot red (Betanin)",
+    "hazard_category_label": "Food additives"
+  },
+  "e140": {
+    "hazard_label": "E140 Chlorophylls",
+    "hazard_category_label": "Food additives"
+  },
+  "e223": {
+    "hazard_label": "E223 Sodium metabisulfite",
+    "hazard_category_label": "Food additives"
+  },
+  "e249": {
+    "hazard_label": "E249 Potassium nitrite",
+    "hazard_category_label": "Food additives"
+  },
+  "e252": {
+    "hazard_label": "E252 Potassium nitrate",
+    "hazard_category_label": "Food additives"
+  },
+  "e260": {
+    "hazard_label": "E260 Acetic acid (vinegar)",
+    "hazard_category_label": "Food additives"
+  },
+  "e320": {
+    "hazard_label": "E320 Butylated hydroxyanisole (BHA)",
+    "hazard_category_label": "Food additives"
+  },
+  "e301": {
+    "hazard_label": "E301 Sodium ascorbate",
+    "hazard_category_label": "Food additives"
+  },
+  "e306": {
+    "hazard_label": "E306 Tocopherols",
+    "hazard_category_label": "Food additives"
+  },
+  "e330": {
+    "hazard_label": "E330 Citric acid",
+    "hazard_category_label": "Food additives"
+  },
+  "e331": {
+    "hazard_label": "E331 Sodium citrate",
+    "hazard_category_label": "Food additives"
+  },
+  "e400": {
+    "hazard_label": "E400 Alginic acid",
+    "hazard_category_label": "Food additives"
+  },
+  "e401": {
+    "hazard_label": "E401 Sodium alginate",
+    "hazard_category_label": "Food additives"
+  },
+  "e406": {
+    "hazard_label": "E406 Agar",
+    "hazard_category_label": "Food additives"
+  },
+  "e471": {
+    "hazard_label": "E471 Mono and diglycerides of fatty acids",
+    "hazard_category_label": "Food additives"
+  },
+  "e627": {
+    "hazard_label": "E627 Disodium guanylate",
+    "hazard_category_label": "Food additives"
+  },
+  "e631": {
+    "hazard_label": "E631 Disodium inosinate",
+    "hazard_category_label": "Food additives"
+  },
+  "e960": {
+    "hazard_label": "E960 Steviol glycosides",
+    "hazard_category_label": "Food additives"
+  },
+  "documentation": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "official document": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "common health entry document": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "passport": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "declaration of compliance": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "residue monitoring plan": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "identification code": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "health certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "original certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "official certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "coi certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "sanitary certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "phytosanitary certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "laboratory report": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "analytical report": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "test report": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "absence of certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "missing certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "invalid certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "improper certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "without mandatory certificate": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "absent information": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "incorrect registration information": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "poor traceability record": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "document mismatch": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "incorrect document": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "lack of mandatory advertisement": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "missing advertisement": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "ched": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "chedd": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "chedp": {
+    "hazard_label": "Documentation",
+    "hazard_category_label": "Documentation"
+  },
+  "official control": {
+    "hazard_label": "Official control",
+    "hazard_category_label": "Official control"
+  },
+  "veterinary certificate": {
+    "hazard_label": "Veterinary control",
+    "hazard_category_label": "Veterinary control"
+  },
+  "veterinary import control": {
+    "hazard_label": "Veterinary control",
+    "hazard_category_label": "Veterinary control"
+  },
+  "veterinary control": {
+    "hazard_label": "Veterinary control",
+    "hazard_category_label": "Veterinary control"
+  },
+  "veterinary check": {
+    "hazard_label": "Veterinary control",
+    "hazard_category_label": "Veterinary control"
+  },
+  "veterinary inspection": {
+    "hazard_label": "Veterinary control",
+    "hazard_category_label": "Veterinary control"
+  },
+  "veterinary and border control": {
+    "hazard_label": "Veterinary control",
+    "hazard_category_label": "Veterinary control"
+  }
+}

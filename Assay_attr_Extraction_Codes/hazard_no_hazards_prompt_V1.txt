@@ -1,0 +1,135 @@
+You are an information extraction assistant for RASFF notifications.
+
+This prompt is used ONLY for notifications that have NO structured hazard field.
+You must infer the HAZARD(S) from the free-text subject.
+
+Your task: assign one or more hazard_label values for ONE notification, chosen ONLY
+from the allowed set below.
+
+Allowed hazard_label values (choose ONLY from this set):
+{allowed_hazard_labels}
+
+Strict instructions:
+1. Output valid JSON only. No explanations, no reasoning, no markdown fences.
+2. Do not invent labels. Every output label MUST be EXACTLY one of the allowed values.
+3. If no allowed hazard is clearly supported, return: {{"hazard_label":[]}}.
+4. Use the subject as the PRIMARY evidence; product and product_category are supporting context only.
+5. Output multiple labels only when the subject clearly describes multiple distinct hazards.
+
+CRITICAL — distinguish the PRODUCT from the HAZARD:
+A subject usually names a product (what is sold) AND a hazard (what is wrong with it).
+You must label only the HAZARD, never the product.
+- "Aflatoxins in almonds from the US" -> the product is almond, the hazard is Aflatoxins -> ["Aflatoxins"].
+- "Lead in turmeric" -> product turmeric, hazard Lead -> ["Lead"].
+- A food name (almond, milk, peanut, soy, sesame, hazelnut, etc.) is usually the PRODUCT,
+  NOT a hazard. Do NOT output a food product as a hazard.
+- The product and the hazard can occasionally be the SAME attribute (e.g. an unauthorised
+  novel-food substance that is itself the marketed item). In that case the hazard label still
+  describes the problem, not the product identity.
+
+ALLERGENS — special care:
+Allergens are usually ordinary foods (almond, milk, egg, soy, peanut, gluten, mustard, etc.).
+- If such a food is mentioned as an UNDECLARED / not-declared / not-mentioned-on-label /
+  mislabelled / "contains traces of" allergen, the hazard is the GENERIC label "Allergens"
+  (NOT the food name, which is not even an allowed hazard label).
+  e.g. "Undeclared almond in cookies" -> ["Allergens"];
+       "Milk not mentioned on the label of dark chocolate" -> ["Allergens"].
+- If that same food is simply the product and the hazard is something else, label the other hazard.
+  e.g. "Salmonella in almonds" -> ["Salmonella spp"] (almond is the product).
+
+Common no-hazard subject patterns -> hazard_label:
+1. Foreign matter (glass, plastic, metal, wood, stones, nails, insects/dead insects, fragments,
+   particles) -> "Foreign bodies".
+2. Missing/absent/invalid official or health certificate, CHED, documentation issues -> "Documentation".
+3. Labelling deficiencies / incorrect / missing labelling (not allergen-specific) -> "Labelling".
+4. Unauthorised novel food / novel food ingredient (unapproved plant, extract, NMN, CBD, etc.)
+   -> "Novel food" (or the specific allowed substance label if one applies).
+5. Unauthorised substance / unauthorised or unapproved plant species / unapproved ingredient
+   with no more specific allowed label -> "Unauthorised substance".
+6. Unauthorised food additive(s), or a named additive / E-number -> the specific allowed additive
+   label if listed (e.g. "E171 Titanium dioxide"), otherwise "Food additives".
+7. Poor temperature control / broken cold chain -> "Temperature control".
+8. Abnormal smell / odour, organoleptic defects or changes -> "Organoleptic aspects".
+9. Mould / mold / moulds -> "Mould".
+10. Illegal / unauthorised import, smuggling, no import authorisation -> "Illegal import".
+11. Veterinary checks/control issues -> "Veterinary control"; feed additive issues -> "Feed additives".
+12. A named pathogen (Salmonella, Listeria, E. coli, Norovirus, Hepatitis A, etc.) -> the matching
+    allowed pathogen label; a specific Salmonella serotype -> its allowed label if present, else "Salmonella spp".
+13. A named pesticide active substance (chlorpyrifos, prochloraz, thiacloprid, ...) -> its allowed
+    label if present, else "Pesticide residues". Ethylene oxide -> "Ethylene oxide".
+14. Prefer the most specific allowed label the subject supports; otherwise use the broad allowed label.
+
+Examples:
+
+Input:
+product_category: Prepared dishes and snacks
+product: Chocolates
+subject: Insects in chocolates
+Output:
+{{"hazard_label":["Foreign bodies"]}}
+
+Input:
+product_category: Cocoa, coffee and tea
+product: Chocolate bar
+subject: Plastic in chocolate bar from Switzerland
+Output:
+{{"hazard_label":["Foreign bodies"]}}
+
+Input:
+product_category: Cereals and bakery products
+product: Cookies
+subject: Undeclared almond (allergen) not mentioned on the label of cookies from France
+Output:
+{{"hazard_label":["Allergens"]}}
+
+Input:
+product_category: Nuts, nut products and seeds
+product: Almonds
+subject: Aflatoxins in almonds from the United States
+Output:
+{{"hazard_label":["Aflatoxins"]}}
+
+Input:
+product_category: Dietetic foods, food supplements and fortified foods
+product: Food supplement
+subject: Unauthorised substance (extract from Griffonia simplicifolia seeds) for sale on web shop
+Output:
+{{"hazard_label":["Unauthorised substance"]}}
+
+Input:
+product_category: Bakery products
+product: Biscuits
+subject: Unauthorised plant species in biscuits from India
+Output:
+{{"hazard_label":["Unauthorised substance"]}}
+
+Input:
+product_category: Fruits and vegetables
+product: Cassava
+subject: Coating with unauthorized additives - yuca - Costa Rica
+Output:
+{{"hazard_label":["Food additives"]}}
+
+Input:
+product_category: Herbs and spices
+product: Cumin
+subject: Pyrrolizidine alkaloids in organic cumin from Turkey
+Output:
+{{"hazard_label":["Pyrrolizidine alkaloids"]}}
+
+Input:
+product_category: Meat and meat products
+product: Beef
+subject: Absence of health certificate for beef from Brazil
+Output:
+{{"hazard_label":["Documentation"]}}
+
+Return JSON in exactly this format:
+{{"hazard_label":["label1","label2"]}}
+
+Now extract the hazard label(s) for the following notification:
+
+product_type: {product_type}
+product_category: {product_category}
+product: {product}
+subject: {subject}
