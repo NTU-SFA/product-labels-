@@ -1,11 +1,11 @@
-# product-labels-
+# Product and Hazard
 
 Product-label extraction and hazard attribute/labelling for RASFF food-recall notifications,
 using Claude on Amazon Bedrock (product/no-hazard records) plus a rule engine (has-hazard records).
 
 ## Pipeline
 
-**Product-label extraction** — prompt: `product_label_prompt_V3.txt`
+**Product-label extraction** — prompt: `Assay_attr_Extraction_Codes/product_label_prompt_V3.txt`
 - test on 2024 ground truth (Precision/Recall/F1): **`Assay_attr_Extraction_Codes/evaluate_product_label.py`**
 - predict on the 2024 batch files: **`Assay_attr_Extraction_Codes/Claude_eval.py`**
 
@@ -59,7 +59,7 @@ python Assay_attr_Extraction_Codes/hazard_eval.py
 ├── hazard/                        # hazard gold + mapping JSON
 ├── rasff_2024_ground_truth_labels.json   # 2024 ground truth (used by the two test scripts)
 ├── Dockerfile, .dockerignore, README_docker.md
-└── (original flat scripts / example result JSONs kept at the root)
+└── (example result JSONs for the first batch kept at the root)
 ```
 
 All paths derive from `RASFF_ROOT` (the repo root locally; `/app` inside the Docker image).
