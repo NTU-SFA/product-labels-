@@ -12,7 +12,7 @@
 #   docker run --rm rasff_labels                              # 2024 product-label test (full)
 #   docker run --rm rasff_labels test-product --limit 20      # quick product test
 #   docker run --rm rasff_labels test-hazard                  # 2024 hazard test
-#   docker run --rm rasff_labels predict-hazard               # hazard predict (rule-only, no token needed)
+#   docker run --rm rasff_labels predict-hazard               # hazard predict (table-lookup, no token needed)
 set -euo pipefail
 cd "${RASFF_ROOT:-/app}/Assay_attr_Extraction_Codes"
 

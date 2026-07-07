@@ -1,6 +1,6 @@
 """
 混合 hazard 抽取（folder 版，单文件自包含，不 import 其它 .py）：
-  - has_hazards 记录（有结构化 hazards 字段）-> 规则引擎（本文件内联，可靠）
+  - has_hazards 记录（有结构化 hazards 字段）-> table-lookup 引擎（本文件内联，可靠）
   - no_hazards  记录（只有 subject）        -> Claude LLM（泛化更好）
 
 LLM 候选标签 = mapping_hazard_label_to_hazard_category_label.json 的 keys（937 个）。
@@ -158,7 +158,7 @@ def build_chain(prompt_path: str):
 
 
 # =========================
-# 规范化配置（全部外置到 hazard_canon_config.json，改规则只需改文件）
+# 规范化配置（全部外置到 hazard_canon_config.json，改表只需改文件）
 #   aliases             -> canon937 别名表（变体 -> 937 标准标签）
 #   allergen_foods      -> 过敏原食物名（出现即折叠为 Allergens）
 #   rule_manual_aliases -> table-lookup canonicalize_one_label 的别名表
@@ -180,7 +180,7 @@ _ALIASES_RAW, _ALLERGEN_FOODS_RAW, _MANUAL_ALIASES = _load_canon_config()
 
 
 # =========================
-# 规则引擎（has_hazards 段，内联自原 hazard_eval.py，仅保留 has 路径所需）
+# table-lookup 引擎（has_hazards 段，内联自原 hazard_eval.py，仅保留 has 路径所需）
 # =========================
 def normalize_labels(labels: List[str]) -> List[str]:
     if not isinstance(labels, list):
@@ -525,7 +525,7 @@ def remove_generic_when_specific_exists(labels: List[str], generic_label: str, p
 
 
 def build_context() -> Dict[str, Any]:
-    """构建 has_hazards 规则引擎所需的全部查表（一次性）。"""
+    """构建 has_hazards table-lookup 引擎所需的全部查表（一次性）。"""
     has_data = load_json(HAS_HAZARDS_LABELLED_PATH)
     no_data = load_json(NO_HAZARDS_LABELLED_PATH)
     has_hazard_label_inventory = load_json(HAS_HAZARDS_MAPPING_HAZARD_LABEL_PATH)
@@ -557,7 +557,7 @@ def build_context() -> Dict[str, Any]:
 
 
 def rule_predict_has_hazards(item: Dict[str, Any], ctx: Dict[str, Any]) -> List[str]:
-    """has_hazards 段：用规则引擎逐条 hazards -> hazard_label 列表。"""
+    """has_hazards 段：用 table-lookup 引擎逐条 hazards -> hazard_label 列表。"""
     pred_labels = []
     for h in item.get("hazards", []):
         if not isinstance(h, dict):
@@ -592,7 +592,7 @@ def build_label_space() -> Tuple[List[str], Dict[str, str], Dict[str, str]]:
 
 # =========================
 # 统一规范化到 937-key 词表（两段共用）
-# 别名表 / 过敏原食物表外置到 hazard_canon_config.json，改规则只需改文件。
+# 别名表 / 过敏原食物表外置到 hazard_canon_config.json，改表只需改文件。
 # =========================
 def _nk_fix(x: str) -> str:
     nk = norm_key(x)

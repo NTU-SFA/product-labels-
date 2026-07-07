@@ -1,7 +1,7 @@
 # Product and Hazard
 
 Product-label extraction and hazard attribute/labelling for RASFF food-recall notifications,
-using Claude on Amazon Bedrock (product/no-hazard records) plus a table-lookup engine (has-hazard records).
+using Claude on Amazon Bedrock (product records) plus a table-lookup engine (hazard records).
 
 ## Pipeline
 
@@ -10,7 +10,7 @@ using Claude on Amazon Bedrock (product/no-hazard records) plus a table-lookup e
 - predict on the 2024 batch files: **`Assay_attr_Extraction_Codes/Claude_eval.py`**
 
 **Hazard attribute extraction & labelling**
-- test on 2024 ground truth: **`Assay_attr_Extraction_Codes/hazard_eval_gt2024.py`**
+- test on 2024 ground truth (table-lookup): **`Assay_attr_Extraction_Codes/hazard_eval_gt2024.py`**
 - predict on the 2024 batch files (table-lookup): **`Assay_attr_Extraction_Codes/hazard_eval.py`**
 
 ## Run with Docker (recommended)
