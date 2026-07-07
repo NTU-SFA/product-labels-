@@ -7,11 +7,11 @@ using Claude on Amazon Bedrock (product records) plus a table-lookup engine (haz
 
 **Product-label extraction** — prompt: `Assay_attr_Extraction_Codes/product_label_prompt_V3.txt`
 - test on 2024 ground truth (Precision/Recall/F1): **`Assay_attr_Extraction_Codes/evaluate_product_label.py`**
-- predict on the 2024 batch files: **`Assay_attr_Extraction_Codes/Claude_eval.py`**
+- predict on the 2024 batch files (can change): **`Assay_attr_Extraction_Codes/Claude_eval.py`**
 
 **Hazard attribute extraction & labelling**
 - test on 2024 ground truth (table-lookup): **`Assay_attr_Extraction_Codes/hazard_eval_gt2024.py`**
-- predict on the 2024 batch files (table-lookup): **`Assay_attr_Extraction_Codes/hazard_eval.py`**
+- predict on the 2024 batch files (can change) (table-lookup): **`Assay_attr_Extraction_Codes/hazard_eval.py`**
 
 ## Run with Docker (recommended)
 
