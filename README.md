@@ -11,7 +11,7 @@ using Claude on Amazon Bedrock (product/no-hazard records) plus a rule engine (h
 
 **Hazard attribute extraction & labelling**
 - test on 2024 ground truth: **`Assay_attr_Extraction_Codes/hazard_eval_gt2024.py`**
-- predict on the 2024 batch files (rule-only): **`Assay_attr_Extraction_Codes/hazard_eval.py`**
+- predict on the 2024 batch files (table-lookup): **`Assay_attr_Extraction_Codes/hazard_eval.py`**
 
 ## Run with Docker (recommended)
 
