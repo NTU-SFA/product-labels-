@@ -27,7 +27,7 @@ docker run --rm rasff_labels                          # 2024 product-label test 
 docker run --rm rasff_labels test-product --limit 20  # quick product test (20 records)
 docker run --rm rasff_labels test-hazard              # 2024 hazard test
 docker run --rm rasff_labels predict-product          # product predict on 2024 batch
-docker run --rm rasff_labels predict-hazard           # hazard predict (rule-only, no token needed)
+docker run --rm rasff_labels predict-hazard           # hazard predict (table-lookup only, no token needed)
 ```
 
 ### Bedrock credentials
@@ -37,7 +37,7 @@ passing your own:
 docker run --rm -e AWS_BEARER_TOKEN_BEDROCK="<your-token>" rasff_labels
 ```
 Region `ap-southeast-1`, model `global.anthropic.claude-sonnet-4-6`. `predict-hazard` is
-rule-only and needs no token.
+table-lookup only and needs no token.
 
 ### Cheap smoke testing
 ```bash

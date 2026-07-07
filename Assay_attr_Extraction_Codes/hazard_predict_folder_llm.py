@@ -161,7 +161,7 @@ def build_chain(prompt_path: str):
 # 规范化配置（全部外置到 hazard_canon_config.json，改规则只需改文件）
 #   aliases             -> canon937 别名表（变体 -> 937 标准标签）
 #   allergen_foods      -> 过敏原食物名（出现即折叠为 Allergens）
-#   rule_manual_aliases -> 规则引擎 canonicalize_one_label 的别名表
+#   rule_manual_aliases -> table-lookup canonicalize_one_label 的别名表
 # =========================
 def _load_canon_config() -> Tuple[Dict[str, str], List[str], Dict[str, str]]:
     try:
@@ -742,7 +742,7 @@ def predict_one_file(input_fp, ctx, chain, prompt_variables,
         has_hazards = isinstance(haz, list) and len(haz) > 0
         try:
             if has_hazards:
-                labels = canon_list(rule_predict_has_hazards(item, ctx))   # 规则 -> 统一到 937
+                labels = canon_list(rule_predict_has_hazards(item, ctx))   # table-lookup -> 统一到 937
                 cats = derive_categories(labels, label_to_cat)             # category 由映射推导
                 n_has += 1
             else:
@@ -794,7 +794,7 @@ def main():
     if not os.environ.get("AWS_BEARER_TOKEN_BEDROCK"):
         raise ValueError("Please set a valid AWS_BEARER_TOKEN_BEDROCK.")
 
-    print("Building rule engine (for has_hazards) ...")
+    print("Building table-lookup engine (for has_hazards) ...")
     ctx = build_context()
 
     print("Building no_hazards LLM label space + chain ...")

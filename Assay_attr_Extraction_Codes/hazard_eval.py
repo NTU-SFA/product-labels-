@@ -679,7 +679,7 @@ def map_has_hazard_item(
 
 
 # =========================
-# NO HAZARDS rules
+# NO HAZARDS table lookup
 # =========================
 ALLERGEN_CUES = [
     "allergen", "allergens",

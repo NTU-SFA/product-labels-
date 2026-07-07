@@ -1,12 +1,12 @@
 """
-Rule-ONLY evaluation on the 2024 ground truth (NO LLM).
+Table-lookup evaluation on the 2024 ground truth (NO LLM).
 
 Scores hazard_label and hazard_category_label against the GT file, split into
 has_hazards / no_hazards / overall, for both label and category.
 
-Both branches are pure rules:
-  - has_hazards -> hazard_predict_folder_llm.rule_predict_has_hazards (rule engine + canon937)
-  - no_hazards  -> hazard_eval.infer_no_hazards (n-gram keyword rule inference over
+Both branches are pure table lookups:
+  - has_hazards -> hazard_predict_folder_llm.rule_predict_has_hazards (table-lookup engine + canon937)
+  - no_hazards  -> hazard_eval.infer_no_hazards (n-gram keyword table-lookup over
                    no_hazards_mapping1.json / no_hazards_mapping2.json)
 The shared post-pipeline (canon_filter -> post_process -> canon937 -> derive_categories)
 and the Metric are identical across branches, so numbers are directly comparable.
@@ -20,8 +20,8 @@ split into has_hazards / no_hazards / overall, computed separately for label and
 import os
 import json
 
-import hazard_predict_folder_llm as L   # has_hazards rule engine + canon + category derivation
-import hazard_eval as E                 # n-gram no_hazards rule inference
+import hazard_predict_folder_llm as L
+import hazard_eval as E
 
 RASFF_ROOT = os.environ.get("RASFF_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GT_PATH = os.environ.get(
@@ -63,14 +63,12 @@ class Metric:
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # --- has_hazards rule engine + 937 label space ---
-    print("Building has_hazards rule engine + 937 label space ...")
+    print("Building has_hazards table-lookup engine + 937 label space ...")
     ctx = L.build_context()
     label_list, label_lookup, label_to_cat = L.build_label_space()
     L.build_canon(label_list)
 
-    # --- no_hazards RULE context (from hazard_eval.py) ---
-    print("Building no_hazards n-gram rule context ...")
+    print("Building no_hazards n-gram table-lookup context ...")
     has_data = E.load_json(E.HAS_HAZARDS_LABELLED_PATH)
     no_data = E.load_json(E.NO_HAZARDS_LABELLED_PATH)
     has_hazard_label_inventory = E.load_json(E.HAS_HAZARDS_MAPPING_HAZARD_LABEL_PATH)
@@ -101,7 +99,7 @@ def main():
         key=lambda x: len(E.normalize_text_for_match(x)), reverse=True,
     )
 
-    def rule_no_hazards_labels(r):
+    def lookup_no_hazards_labels(r):
         labels = E.infer_no_hazards(
             item=r, mapping1=mapping1, mapping2=mapping2,
             label_to_category_map=label_to_category_map, pesticide_labels=pesticide_labels,
@@ -124,10 +122,10 @@ def main():
         is_has = isinstance(hz, list) and len(hz) > 0
 
         if is_has:
-            labels = L.canon_list(L.rule_predict_has_hazards(r, ctx))            # rule
+            labels = L.canon_list(L.rule_predict_has_hazards(r, ctx))
         else:
-            labels = L.canon_list(L.post_process_labels(                          # rule (no LLM)
-                L.canon_filter(rule_no_hazards_labels(r), label_lookup)))
+            labels = L.canon_list(L.post_process_labels(
+                L.canon_filter(lookup_no_hazards_labels(r), label_lookup)))
         cats = L.derive_categories(labels, label_to_cat)
 
         pred_l, truth_l = norm_set(labels), norm_set(r.get("hazard_label", []))
@@ -142,14 +140,14 @@ def main():
                                "gold_label": sorted(truth_l), "pred_label": sorted(pred_l),
                                "gold_category": sorted(truth_c), "pred_category": sorted(pred_c)})
 
-    report = {"gt_path": GT_PATH, "total": len(gt), "mode": "RULE ONLY (no LLM)",
+    report = {"gt_path": GT_PATH, "total": len(gt), "mode": "TABLE-LOOKUP ONLY (no LLM)",
               "hazard_label": {s: M[("label", s)].report() for s in ("has", "no", "all")},
               "hazard_category_label": {s: M[("cat", s)].report() for s in ("has", "no", "all")}}
     json.dump(report, open(os.path.join(OUTPUT_DIR, "metrics.json"), "w"), ensure_ascii=False, indent=2)
     json.dump(mismatches, open(os.path.join(OUTPUT_DIR, "mismatches.json"), "w"), ensure_ascii=False, indent=2)
 
     for field in ("hazard_label", "hazard_category_label"):
-        print(f"\n==== {field} (RULE ONLY) ====")
+        print(f"\n==== {field} (TABLE-LOOKUP ONLY) ====")
         hdr = f"{'segment':8} {'n':>6} {'exact_acc':>10} {'jaccard':>8} {'P':>7} {'R':>7} {'F1':>7}"
         print(hdr); print("-" * len(hdr))
         for s, name in [("has", "has_haz"), ("no", "no_haz"), ("all", "OVERALL")]:

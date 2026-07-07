@@ -1,7 +1,7 @@
 # Product and Hazard
 
 Product-label extraction and hazard attribute/labelling for RASFF food-recall notifications,
-using Claude on Amazon Bedrock (product/no-hazard records) plus a rule engine (has-hazard records).
+using Claude on Amazon Bedrock (product/no-hazard records) plus a table-lookup engine (has-hazard records).
 
 ## Pipeline
 
