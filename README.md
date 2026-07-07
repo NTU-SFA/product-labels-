@@ -13,9 +13,6 @@ using Claude on Amazon Bedrock (product/no-hazard records) plus a rule engine (h
 - test on 2024 ground truth: **`Assay_attr_Extraction_Codes/hazard_eval_gt2024.py`**
 - predict on the 2024 batch files (rule-only): **`Assay_attr_Extraction_Codes/hazard_eval.py`**
 
-Example results are included at the repo root (`rasff_data_2024_batch1_with_predicted_product_label.json`,
-`rasff_batch_1_hazard.json`).
-
 ## Run with Docker (recommended)
 
 Everything (code, prompts, data) is bundled, so it installs and runs anywhere — no manual
@@ -27,8 +24,8 @@ docker build -t rasff_labels .
 docker run --rm rasff_labels                          # 2024 product-label test (default)
 docker run --rm rasff_labels test-product --limit 20  # quick product test
 docker run --rm rasff_labels test-hazard              # 2024 hazard test
-docker run --rm rasff_labels predict-product          # product predict on 2024 batch
-docker run --rm rasff_labels predict-hazard           # hazard predict (rule-only, no token needed)
+docker run --rm rasff_labels predict-product          # product predict on 2024 batch (can change)
+docker run --rm rasff_labels predict-hazard           # hazard predict (table-lookup) (can change)
 ```
 
 Bedrock credentials are **not** committed. Pass your token at run time (region `ap-southeast-1`,
@@ -44,7 +41,7 @@ The scripts auto-detect the repo root, so from the repo directory:
 
 ```bash
 pip install -r Assay_attr_Extraction_Codes/requirements.txt
-export AWS_BEARER_TOKEN_BEDROCK="<your-token>"   # not needed for hazard_eval.py (rule-only)
+export AWS_BEARER_TOKEN_BEDROCK="<your-token>"   # not needed for hazard_eval.py (table-lookup)
 
 python Assay_attr_Extraction_Codes/evaluate_product_label.py --limit 20
 python Assay_attr_Extraction_Codes/hazard_eval.py
