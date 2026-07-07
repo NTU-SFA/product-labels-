@@ -9,8 +9,8 @@ included.
 |------|--------|---------|------|
 | `test-product` (default) | `evaluate_product_label.py` | product_label vs 2024 ground truth (Precision/Recall/F1) | ✅ Bedrock |
 | `test-hazard` | `hazard_eval_gt2024.py` | hazard label/category vs 2024 ground truth | ✅ Bedrock (no-hazard records) |
-| `predict-product` | `Claude_eval.py` | predict product_label on the 2024 batch file | ✅ Bedrock |
-| `predict-hazard` | `hazard_eval.py` | predict hazard label/category on the 2024 batch file | ❌ rule-only |
+| `predict-product` | `Claude_eval.py` | predict product_label on the 2024 batch file (can change)| ✅ Bedrock |
+| `predict-hazard` | `hazard_eval.py` | predict hazard label/category on the 2024 batch file (can change) | ❌  table lookup |
 
 ## Prerequisites
 - **Docker Desktop** installed and running (`docker info` should succeed).
