@@ -24,8 +24,7 @@ AWS_REGION = "ap-southeast-1"
 CLAUDE_MODEL = "global.anthropic.claude-sonnet-4-6"
 TEMPERATURE = 0
 MAX_TOKENS = 1024
-
-# 项目根目录：本机默认绝对路径；Docker 里用 RASFF_ROOT=/app 覆盖，代码零改动。
+# Project root directory: The default absolute path on the local machine; in Docker, use RASFF_ROOT=/app to override it, with zero code changes.
 RASFF_ROOT = os.environ.get("RASFF_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_DIR = os.path.join(RASFF_ROOT, "FIND-food-recall-data-main_V2")
 PROMPT_BASE_DIR = os.path.join(RASFF_ROOT, "Assay_attr_Extraction_Codes")
