@@ -5,7 +5,7 @@ Scores hazard_label and hazard_category_label against the GT file, split into
 has_hazards / no_hazards / overall, for both label and category.
 
 Both branches are pure table lookups:
-  - has_hazards -> hazard_predict_folder_llm.rule_predict_has_hazards (table-lookup engine + canon937)
+  - has_hazards -> hazard_eval.rule_predict_has_hazards (table-lookup engine + canon937)
   - no_hazards  -> hazard_eval.infer_no_hazards (n-gram keyword table-lookup over
                    no_hazards_mapping1.json / no_hazards_mapping2.json)
 The shared post-pipeline (canon_filter -> post_process -> canon937 -> derive_categories)
@@ -20,15 +20,14 @@ split into has_hazards / no_hazards / overall, computed separately for label and
 import os
 import json
 
-import hazard_predict_folder_llm as L
-import hazard_eval as E
+import hazard_eval as E   # has 段 table-lookup + no 段 n-gram 规则，均在此模块内
 
 RASFF_ROOT = os.environ.get("RASFF_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GT_PATH = os.environ.get(
     "GROUND_TRUTH_PATH",
     os.path.join(RASFF_ROOT, "rasff_2024_ground_truth_labels.json"),
 )
-OUTPUT_DIR = os.path.join(L.CODE_DIR, "Outputs_hazard_eval_gt2024")
+OUTPUT_DIR = os.path.join(E.CODE_DIR, "Outputs_hazard_eval_gt2024")
 
 
 def norm_set(labels):
@@ -64,9 +63,9 @@ def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     print("Building has_hazards table-lookup engine + 937 label space ...")
-    ctx = L.build_context()
-    label_list, label_lookup, label_to_cat = L.build_label_space()
-    L.build_canon(label_list)
+    ctx = E.build_context()
+    label_list, label_lookup, label_to_cat = E.build_label_space()
+    E.build_canon(label_list)
 
     print("Building no_hazards n-gram table-lookup context ...")
     has_data = E.load_json(E.HAS_HAZARDS_LABELLED_PATH)
@@ -109,7 +108,7 @@ def main():
         )[0]
         return labels
 
-    gt = L.load_json(GT_PATH)
+    gt = E.load_json(GT_PATH)
     has_n = sum(1 for r in gt if isinstance(r.get("hazards"), list) and len(r.get("hazards")) > 0)
     print(f"GT total={len(gt)} | has_hazards={has_n} | no_hazards={len(gt) - has_n}")
 
@@ -122,11 +121,11 @@ def main():
         is_has = isinstance(hz, list) and len(hz) > 0
 
         if is_has:
-            labels = L.canon_list(L.rule_predict_has_hazards(r, ctx))
+            labels = E.canon_list(E.rule_predict_has_hazards(r, ctx))
         else:
-            labels = L.canon_list(L.post_process_labels(
-                L.canon_filter(lookup_no_hazards_labels(r), label_lookup)))
-        cats = L.derive_categories(labels, label_to_cat)
+            labels = E.canon_list(E.post_process_labels(
+                E.canon_filter(lookup_no_hazards_labels(r), label_lookup)))
+        cats = E.derive_categories(labels, label_to_cat)
 
         pred_l, truth_l = norm_set(labels), norm_set(r.get("hazard_label", []))
         pred_c, truth_c = norm_set(cats), norm_set(r.get("hazard_category_label", []))

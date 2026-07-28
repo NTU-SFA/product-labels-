@@ -1170,6 +1170,226 @@ def infer_no_hazards(
     return labels, categories, sorted(list(set(hits1 + hits2))), source
 
 
+
+# =========================
+# 以下自 hazard_predict_folder_llm.py 逐行搬入，使本脚本可独立运行（评估脚本不再 import 生产的 LLM 脚本）：
+#   canon937 规范化配置 / build_context / rule_predict_has_hazards / build_label_space /
+#   canon_list / canon_filter / post_process_labels / derive_categories
+# canonicalize_one_label 沿用本文件内联的 manual_aliases（与 hazard_canon_config.json
+# 的 rule_manual_aliases 逐条等价，83 条，已核对）。
+# =========================
+# 候选 hazard_label 集 = label->category 映射文件的 keys
+LABEL_TO_CATEGORY_PATH = MAPPING_LABEL_TO_CATEGORY_PATH
+
+CANON_CONFIG_PATH = os.path.join(CODE_DIR, "hazard_canon_config.json")
+
+
+# =========================
+# 规范化配置（全部外置到 hazard_canon_config.json，改表只需改文件）
+#   aliases             -> canon937 别名表（变体 -> 937 标准标签）
+#   allergen_foods      -> 过敏原食物名（出现即折叠为 Allergens）
+#   rule_manual_aliases -> table-lookup canonicalize_one_label 的别名表
+# =========================
+def _load_canon_config() -> Tuple[Dict[str, str], List[str], Dict[str, str]]:
+    try:
+        cfg = load_json(CANON_CONFIG_PATH)
+    except FileNotFoundError:
+        print(f"[Warn] canon config not found, normalization runs without aliases: {CANON_CONFIG_PATH}")
+        return {}, [], {}
+    return (
+        cfg.get("aliases", {}) or {},
+        cfg.get("allergen_foods", []) or [],
+        cfg.get("rule_manual_aliases", {}) or {},
+    )
+
+
+_ALIASES_RAW, _ALLERGEN_FOODS_RAW, _MANUAL_ALIASES = _load_canon_config()
+
+
+def build_context() -> Dict[str, Any]:
+    """构建 has_hazards table-lookup 引擎所需的全部查表（一次性）。"""
+    has_data = load_json(HAS_HAZARDS_LABELLED_PATH)
+    no_data = load_json(NO_HAZARDS_LABELLED_PATH)
+    has_hazard_label_inventory = load_json(HAS_HAZARDS_MAPPING_HAZARD_LABEL_PATH)
+    has_hazard_category_inventory = load_json(HAS_HAZARDS_MAPPING_HAZARD_CATEGORY_LABEL_PATH)
+    no_mapping1_raw = load_json(NO_HAZARDS_MAPPING1_PATH)
+    no_mapping2_raw = load_json(NO_HAZARDS_MAPPING2_PATH)
+    label_to_category_raw = load_json(MAPPING_LABEL_TO_CATEGORY_PATH)
+
+    allowed_hazard_labels, allowed_hazard_category_labels = build_allowed_label_sets(
+        has_data, no_data, has_hazard_label_inventory, has_hazard_category_inventory,
+        no_mapping1_raw, no_mapping2_raw, label_to_category_raw,
+    )
+    preferred_hazard_lookup = build_preferred_lookup_from_gold(has_data + no_data, "hazard_label")
+    preferred_hazard_category_lookup = build_preferred_lookup_from_gold(has_data + no_data, "hazard_category_label")
+    allowed_hazard_lookup = merge_preferred_and_allowed(preferred_hazard_lookup, allowed_hazard_labels)
+    allowed_hazard_category_lookup = merge_preferred_and_allowed(preferred_hazard_category_lookup, allowed_hazard_category_labels)
+    label_to_category_map = compile_label_to_category_map(label_to_category_raw, allowed_hazard_lookup, allowed_hazard_category_lookup)
+    raw_hazard_to_label, raw_hazard_to_cat, attr_to_label, attr_to_cat = build_has_hazards_exact_maps(
+        has_data, label_to_category_map, allowed_hazard_lookup, allowed_hazard_labels,
+        allowed_hazard_category_lookup, allowed_hazard_category_labels,
+    )
+    return {
+        "file_label_map": build_has_hazard_label_map(has_hazard_label_inventory),
+        "raw_hazard_to_label": raw_hazard_to_label, "raw_hazard_to_cat": raw_hazard_to_cat,
+        "attr_to_label": attr_to_label, "attr_to_cat": attr_to_cat,
+        "label_to_category_map": label_to_category_map,
+        "allowed_hazard_labels": allowed_hazard_labels, "allowed_hazard_category_labels": allowed_hazard_category_labels,
+        "allowed_hazard_lookup": allowed_hazard_lookup, "allowed_hazard_category_lookup": allowed_hazard_category_lookup,
+    }
+
+
+def rule_predict_has_hazards(item: Dict[str, Any], ctx: Dict[str, Any]) -> List[str]:
+    """has_hazards 段：用 table-lookup 引擎逐条 hazards -> hazard_label 列表。"""
+    pred_labels = []
+    file_sourced = set()
+    for h in item.get("hazards", []):
+        if not isinstance(h, dict):
+            continue
+        labels, _cats, _src = map_has_hazard_item(
+            raw_hazard=h.get("hazard", ""), raw_category=h.get("category", "") or h.get("hazard_category", ""),
+            raw_hazard_to_label=ctx["raw_hazard_to_label"], raw_hazard_to_cat=ctx["raw_hazard_to_cat"],
+            attr_to_label=ctx["attr_to_label"], attr_to_cat=ctx["attr_to_cat"],
+            label_to_category_map=ctx["label_to_category_map"],
+            allowed_hazard_lookup=ctx["allowed_hazard_lookup"], allowed_hazard_category_lookup=ctx["allowed_hazard_category_lookup"],
+            allowed_hazard_labels=ctx["allowed_hazard_labels"], allowed_hazard_category_labels=ctx["allowed_hazard_category_labels"],
+            file_label_map=ctx.get("file_label_map"),
+        )
+        pred_labels.extend(labels)
+        if _src == "mapping_file":
+            file_sourced.update(labels)
+    # 映射文件命中的标签保持原样，其余照旧规范化
+    rest = canonicalize_pred_labels([x for x in pred_labels if x not in file_sourced],
+                                    ctx["allowed_hazard_lookup"], ctx["allowed_hazard_labels"])
+    return sorted(set(rest) | file_sourced)
+
+
+# =========================
+# 候选标签集（= 映射 keys） + label->category 推导
+# =========================
+def build_label_space() -> Tuple[List[str], Dict[str, str], Dict[str, str]]:
+    """返回 (候选 label 列表, 小写->规范 label 查表, 规范 label->category 映射)。"""
+    raw = load_json(LABEL_TO_CATEGORY_PATH)
+    label_to_cat = {
+        k.strip(): (v.strip() if isinstance(v, str) and v.strip() else k.strip())
+        for k, v in raw.items()
+        if isinstance(k, str) and k.strip()
+    }
+    label_list = sorted(label_to_cat.keys())
+    label_lookup = {x.lower(): x for x in label_list}
+    return label_list, label_lookup, label_to_cat
+
+
+
+# =========================
+# 统一规范化到 937-key 词表（两段共用）
+# 别名表 / 过敏原食物表外置到 hazard_canon_config.json，改表只需改文件。
+# =========================
+def _nk_fix(x: str) -> str:
+    nk = norm_key(x)
+    nk = re.sub(r"\be\s+(\d{3,4})", r"e\1", nk)          # "e 102" -> "e102"
+    nk = nk.replace("(", " ").replace(")", " ").replace("/", " ")
+    nk = re.sub(r"\s+", " ", nk).strip()
+    return nk
+
+
+_CANON = {}
+
+
+def build_canon(label_list: List[str]):
+    _CANON["keys"] = label_list
+    _CANON["lookup"] = {_nk_fix(k): k for k in label_list}
+    # 权威映射文件产出的标签写法优先：936 词表里存在大小写重复
+    # （Salmonella Enteritidis / Salmonella enteritidis），字典构建顺序会把小写写法覆盖上去。
+    try:
+        for k, v in load_json(HAS_HAZARDS_MAPPING_HAZARD_LABEL_PATH).items():
+            lab = v.strip() if isinstance(v, str) and v.strip() else (k.strip() if isinstance(k, str) else "")
+            if lab and _nk_fix(lab) in _CANON["lookup"]:
+                _CANON["lookup"][_nk_fix(lab)] = lab
+    except Exception:
+        pass
+    _CANON["keyset"] = set(_CANON["lookup"].keys())
+    _CANON["aliases"] = {_nk_fix(k): v for k, v in _ALIASES_RAW.items()}
+    _CANON["allergen"] = {_nk_fix(x) for x in _ALLERGEN_FOODS_RAW}
+
+
+def canon937(x: str) -> str:
+    if not isinstance(x, str) or not x.strip():
+        return ""
+    nk = _nk_fix(x)
+    if nk in _CANON["allergen"]:
+        return "Allergens"
+    if nk in _CANON["aliases"]:
+        return _CANON["aliases"][nk]
+    if nk in _CANON["keyset"]:
+        return _CANON["lookup"][nk]
+    m = re.search(r"\be(\d{3,4})", nk)                   # E 编号唯一前缀匹配
+    if m:
+        base = "e" + m.group(1)
+        cands = {v for k, v in _CANON["lookup"].items() if k.startswith(base)}
+        if len(cands) == 1:
+            return next(iter(cands))
+    c = canonicalize_one_label(x, _CANON["lookup"], _CANON["keys"])  # 通用兜底
+    cnk = _nk_fix(c)
+    if cnk in _CANON["aliases"]:
+        return _CANON["aliases"][cnk]
+    if cnk in _CANON["keyset"]:
+        return _CANON["lookup"][cnk]
+    return x
+
+
+def canon_list(labels: List[str]) -> List[str]:
+    out = []
+    for x in labels:
+        c = canon937(x)
+        if c:
+            out.append(c)
+    return sorted(set(out))
+
+
+def canon_filter(values, lookup: Dict[str, str]) -> List[str]:
+    """把 LLM 输出按词表规范化（忽略大小写），丢弃不在候选集里的。"""
+    if not isinstance(values, list):
+        return []
+    out = []
+    for x in values:
+        if isinstance(x, str) and x.strip():
+            k = x.strip().lower()
+            if k in lookup:
+                out.append(lookup[k])
+    return sorted(set(out))
+
+
+def post_process_labels(labels: List[str]) -> List[str]:
+    """移植 hazard_eval 里调好的、与 subject 无关的标签清洗规则。"""
+    labels = list(labels)
+    for generic, prefix in [
+        ("Salmonella spp", "Salmonella "),
+        ("Listeria spp", "Listeria "),
+        ("Vibrio spp", "Vibrio "),
+        ("Cronobacter spp", "Cronobacter "),
+    ]:
+        labels = remove_generic_when_specific_exists(labels, generic, prefix)
+    if "Allergens" in labels and "Labelling" not in labels:
+        labels = ["Allergens"]
+    if any(re.match(r"^E[0-9]{3,4}", x) for x in labels) and "Food additives" in labels:
+        labels = [x for x in labels if x != "Food additives"]
+    if labels == ["Novel food ingredient"]:
+        labels = ["Novel food"]
+    if "Cannabinoid" in labels and "Novel food ingredient" in labels:
+        labels = [x for x in labels if x != "Novel food ingredient"]
+    return sorted(set(labels))
+
+
+def derive_categories(labels: List[str], label_to_cat: Dict[str, str]) -> List[str]:
+    """hazard_category_label 一律由 hazard_label 经映射推导。"""
+    cats = []
+    for l in labels:
+        c = label_to_cat.get(l)
+        if c:
+            cats.append(c)
+    return sorted(set(cats))
+
 # =========================
 # Main
 # =========================
