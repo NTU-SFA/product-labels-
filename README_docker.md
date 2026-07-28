@@ -11,6 +11,11 @@ included.
 | `test-hazard` | `hazard_eval_gt2024.py` | hazard label/category vs 2024 ground truth | ❌  table lookup |
 | `predict-product` | `Claude_eval.py` | predict product_label on the 2024 batch file (can change)| ✅ Bedrock |
 | `predict-hazard` | `hazard_eval.py` | predict hazard label/category on the 2024 batch file (can change) | ❌  table lookup |
+| `predict-hazard-llm` | `hazard_predict_folder_llm.py` | same, but records without a structured `hazards` field go to the LLM instead of the keyword rules. Reads a *folder* of product-label outputs, which is not in this repo — set `INPUT_DIR` | ✅ Bedrock (no-hazards branch only) |
+
+Records that carry a structured `hazards` field are always resolved by table lookup, in every
+mode. The modes differ only in how records with just a subject are handled: keyword rules
+(`hazard_eval.py`, `hazard_eval_gt2024.py`) or Claude (`hazard_predict_folder_llm.py`).
 
 ## Prerequisites
 - **Docker Desktop** installed and running (`docker info` should succeed).
@@ -28,11 +33,21 @@ docker run --rm rasff_labels test-product --limit 20  # quick product test (20 r
 docker run --rm rasff_labels test-hazard              # 2024 hazard test
 docker run --rm rasff_labels predict-product          # product predict on 2024 batch
 docker run --rm rasff_labels predict-hazard           # hazard predict (table-lookup only, no token needed)
+docker run --rm rasff_labels predict-hazard-llm       # hazard predict, no-hazards branch via LLM
 ```
 
+`predict-hazard-llm` needs an input folder mounted, since the product-label output folders are
+not committed:
+```bash
+docker run --rm -e AWS_BEARER_TOKEN_BEDROCK="<your-token>" \
+  -v "$PWD/my_product_outputs:/data" -e INPUT_DIR=/data rasff_labels predict-hazard-llm
+```
+Results are written next to it as `<folder-name>_hazard_llm/`.
+
 ### Bedrock credentials
-The scripts fall back to a baked-in `AWS_BEARER_TOKEN_BEDROCK`, but it can expire — prefer
-passing your own:
+No token is committed: the scripts fall back to the literal placeholder
+`REPLACE_WITH_YOUR_AWS_BEARER_TOKEN_BEDROCK`, so any mode that calls Bedrock fails until you
+pass your own:
 ```bash
 docker run --rm -e AWS_BEARER_TOKEN_BEDROCK="<your-token>" rasff_labels
 ```
@@ -63,7 +78,8 @@ python Assay_attr_Extraction_Codes/hazard_eval.py
 ## Layout
 ```
 .
-├── Assay_attr_Extraction_Codes/   # the 4 scripts + imported helpers + prompts/config + requirements
+├── Assay_attr_Extraction_Codes/   # the 5 entry scripts + Claude_predict_folder.py (imported by
+│                                  # evaluate_product_label.py) + prompts/config + requirements
 ├── FIND-food-recall-data-main_V2/ # product_labels.txt + 2024 batch files
 ├── hazard/                        # hazard gold + mapping json
 ├── rasff_2024_ground_truth_labels.json  # 2024 ground truth (used by the two test modes)

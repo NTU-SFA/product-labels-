@@ -5,7 +5,8 @@
 #   test-product     evaluate product_label on the 2024 ground truth  (P/R/F1)   [DEFAULT]
 #   test-hazard      evaluate hazard_label/category on the 2024 ground truth
 #   predict-product  predict product_label on the 2024 batch file(s)
-#   predict-hazard   predict hazard_label/category on the 2024 batch file(s)
+#   predict-hazard   predict hazard_label/category on the 2024 batch file(s)  (table lookup only)
+#   predict-hazard-llm  same, but records with no structured hazards field go to the LLM
 #   shell            drop into bash (debugging)
 #
 # Examples:
@@ -24,10 +25,11 @@ case "$MODE" in
   test-hazard)     exec python hazard_eval_gt2024.py "$@" ;;
   predict-product) exec python Claude_eval.py "$@" ;;
   predict-hazard)  exec python hazard_eval.py "$@" ;;
+  predict-hazard-llm) exec python hazard_predict_folder_llm.py "$@" ;;
   shell)           exec bash "$@" ;;
   *)
     echo "Unknown mode: $MODE" >&2
-    echo "Valid modes: test-product | test-hazard | predict-product | predict-hazard | shell" >&2
+    echo "Valid modes: test-product | test-hazard | predict-product | predict-hazard | predict-hazard-llm | shell" >&2
     exit 2
     ;;
 esac
