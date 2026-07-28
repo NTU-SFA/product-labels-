@@ -42,14 +42,6 @@ docker run --rm rasff_labels predict-hazard           # hazard predict (table-lo
 docker run --rm rasff_labels predict-hazard-llm       # hazard predict, no-hazards branch via LLM
 ```
 
-`predict-hazard-llm` reads a folder of product-label outputs, which is not part of this repo —
-point it at one with `INPUT_DIR`, otherwise it processes nothing:
-
-```bash
-docker run --rm -e AWS_BEARER_TOKEN_BEDROCK="<your-token>" \
-  -v "$PWD/my_product_outputs:/data" -e INPUT_DIR=/data rasff_labels predict-hazard-llm
-```
-
 Bedrock credentials are **not** committed. Pass your token at run time (region `ap-southeast-1`,
 model `global.anthropic.claude-sonnet-4-6`):
 

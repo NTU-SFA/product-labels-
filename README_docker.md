@@ -36,13 +36,8 @@ docker run --rm rasff_labels predict-hazard           # hazard predict (table-lo
 docker run --rm rasff_labels predict-hazard-llm       # hazard predict, no-hazards branch via LLM
 ```
 
-`predict-hazard-llm` needs an input folder mounted, since the product-label output folders are
-not committed:
-```bash
-docker run --rm -e AWS_BEARER_TOKEN_BEDROCK="<your-token>" \
-  -v "$PWD/my_product_outputs:/data" -e INPUT_DIR=/data rasff_labels predict-hazard-llm
-```
-Results are written next to it as `<folder-name>_hazard_llm/`.
+`predict-hazard-llm` reads a folder of product-label outputs (`-e INPUT_DIR=...`) and writes
+`<folder-name>_hazard_llm/` next to it.
 
 ### Bedrock credentials
 No token is committed: the scripts fall back to the literal placeholder
