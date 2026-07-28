@@ -19,7 +19,7 @@ LLM. The three scripts differ only in that branch:
 |---|---|---|---|
 | `Assay_attr_Extraction_Codes/hazard_eval_gt2024.py` — test on 2024 ground truth | table lookup | n-gram keyword rules | not needed |
 | `Assay_attr_Extraction_Codes/hazard_eval.py` — predict on the 2024 batch files (can change) | table lookup | n-gram keyword rules | not needed |
-| `Assay_attr_Extraction_Codes/hazard_predict_folder_llm.py` — predict on a folder of product outputs | table lookup | Claude on Bedrock | required |
+| `Assay_attr_Extraction_Codes/hazard_predict_folder_llm.py` — predict hazard on a folder | table lookup | Claude on Bedrock | required |
 
 The table lookup resolves `hazard_label` from `hazard/has_hazards_mapping_hazard_label.json`
 (an empty value in that file means the label is the key itself); `hazard_category_label` is
