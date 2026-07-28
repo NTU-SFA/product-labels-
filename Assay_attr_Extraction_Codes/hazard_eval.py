@@ -1464,6 +1464,7 @@ def main():
         "total_records": 0,
         "has_hazards_records": 0,
         "no_hazards_records": 0,
+        "has_hazards_mapping_file_hits": 0,
         "has_hazards_exact_raw_hazard_hits": 0,
         "has_hazards_attr_fallback_hits": 0,
         "no_hazards_mapping1_hits": 0,
@@ -1487,6 +1488,7 @@ def main():
             if has_hazards:
                 source_stats["has_hazards_records"] += 1
                 per_item_sources = []
+                file_sourced_labels = set()
 
                 for h in hazards:
                     if not isinstance(h, dict):
@@ -1513,24 +1515,35 @@ def main():
                     pred_hazard_labels.extend(labels)
                     pred_hazard_categories.extend(cats)
                     per_item_sources.append(local_source)
+                    if local_source == "mapping_file":
+                        file_sourced_labels.update(labels)
 
                     nrawhaz = norm_key(raw_hazard)
                     nattr = norm_key(extract_hazard_attribute(raw_hazard))
                     matched_keys.append(nrawhaz)
 
-                    if nrawhaz in raw_hazard_to_label or nrawhaz in raw_hazard_to_cat:
+                    if local_source == "mapping_file":
+                        source_stats["has_hazards_mapping_file_hits"] += 1
+                    elif local_source == "exact_raw_hazard":
                         source_stats["has_hazards_exact_raw_hazard_hits"] += 1
-                    elif nattr in attr_to_label or nattr in attr_to_cat:
+                    elif local_source == "attribute_mapping":
                         source_stats["has_hazards_attr_fallback_hits"] += 1
 
-                pred_hazard_labels = canonicalize_pred_labels(
-                    pred_hazard_labels, allowed_hazard_lookup, allowed_hazard_labels
+                # 映射文件命中的标签是权威写法，保持原样；其余照旧规范化。
+                # （否则 gold 里的 preferred 写法会把它改掉，例如
+                #   E171 Titanium dioxide -> E171 titanium dioxide）
+                rest = canonicalize_pred_labels(
+                    [x for x in pred_hazard_labels if x not in file_sourced_labels],
+                    allowed_hazard_lookup, allowed_hazard_labels
                 )
+                pred_hazard_labels = sorted(set(rest) | file_sourced_labels)
                 pred_hazard_categories = canonicalize_pred_labels(
                     pred_hazard_categories, allowed_hazard_category_lookup, allowed_hazard_category_labels
                 )
 
-                if "exact_raw_hazard" in per_item_sources:
+                if "mapping_file" in per_item_sources:
+                    prediction_source = "has_hazards_mapping_file"
+                elif "exact_raw_hazard" in per_item_sources:
                     prediction_source = "has_hazards_exact_raw_hazard_mapping"
                 elif "attribute_mapping" in per_item_sources:
                     prediction_source = "has_hazards_attribute_mapping"
