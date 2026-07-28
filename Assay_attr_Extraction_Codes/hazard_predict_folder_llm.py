@@ -423,6 +423,22 @@ def infer_category_from_hazard(raw_hazard, raw_category, gold_categories, chosen
     return ""
 
 
+def build_has_hazard_label_map(inventory: Dict[str, Any]) -> Dict[str, str]:
+    """权威映射表 has_hazards_mapping_hazard_label.json -> {规范化键: hazard_label}。
+
+    文件里两种写法：value 非空 = 改写（Fragments glass -> Foreign bodies）；
+    value 为空 = 恒等（标签即 key 本身，如 Cyanide / Salmonella Altona）。
+    这是 has_hazards 段 hazard_label 的第一优先来源，命中即采信。
+    """
+    out: Dict[str, str] = {}
+    for k, v in inventory.items():
+        if not isinstance(k, str) or not k.strip():
+            continue
+        label = v.strip() if isinstance(v, str) and v.strip() else k.strip()
+        out.setdefault(norm_key(k), label)
+    return out
+
+
 def build_has_hazards_exact_maps(has_labelled, label_to_category_map, allowed_hazard_lookup, allowed_hazard_labels,
                                  allowed_hazard_category_lookup, allowed_hazard_category_labels):
     raw_hazard_to_label_counts = defaultdict(Counter)
@@ -467,7 +483,8 @@ def build_has_hazards_exact_maps(has_labelled, label_to_category_map, allowed_ha
 
 def map_has_hazard_item(raw_hazard, raw_category, raw_hazard_to_label, raw_hazard_to_cat, attr_to_label, attr_to_cat,
                         label_to_category_map, allowed_hazard_lookup, allowed_hazard_category_lookup,
-                        allowed_hazard_labels, allowed_hazard_category_labels):
+                        allowed_hazard_labels, allowed_hazard_category_labels,
+                        file_label_map=None):
     nrawhaz = norm_key(raw_hazard)
     attr = extract_hazard_attribute(raw_hazard)
     nattr = norm_key(attr)
@@ -475,7 +492,16 @@ def map_has_hazard_item(raw_hazard, raw_category, raw_hazard_to_label, raw_hazar
     cats = []
     source = "fallback"
 
-    if nrawhaz in raw_hazard_to_label:
+    # ① 权威映射文件优先：先按属性段查，再按 hazard 整串查。命中即采信，
+    #    不再走历史语料统计表，也不再过 canon 兜底（文件给的就是规范标签）。
+    file_label = ""
+    if file_label_map:
+        file_label = file_label_map.get(nattr) or file_label_map.get(nrawhaz) or ""
+
+    if file_label:
+        labels.append(file_label)
+        source = "mapping_file"
+    elif nrawhaz in raw_hazard_to_label:
         labels.append(raw_hazard_to_label[nrawhaz])
         source = "exact_raw_hazard"
     elif nattr in attr_to_label:
@@ -512,7 +538,8 @@ def map_has_hazard_item(raw_hazard, raw_category, raw_hazard_to_label, raw_hazar
             if ccat:
                 cats.append(ccat)
 
-    labels = canonicalize_pred_labels(labels, allowed_hazard_lookup, allowed_hazard_labels)
+    if source != "mapping_file":                 # 映射文件的标签是权威写法，不再二次规范化
+        labels = canonicalize_pred_labels(labels, allowed_hazard_lookup, allowed_hazard_labels)
     cats = canonicalize_pred_labels(cats, allowed_hazard_category_lookup, allowed_hazard_category_labels)
     return labels, cats, source
 
@@ -548,6 +575,7 @@ def build_context() -> Dict[str, Any]:
         allowed_hazard_category_lookup, allowed_hazard_category_labels,
     )
     return {
+        "file_label_map": build_has_hazard_label_map(has_hazard_label_inventory),
         "raw_hazard_to_label": raw_hazard_to_label, "raw_hazard_to_cat": raw_hazard_to_cat,
         "attr_to_label": attr_to_label, "attr_to_cat": attr_to_cat,
         "label_to_category_map": label_to_category_map,
@@ -559,6 +587,7 @@ def build_context() -> Dict[str, Any]:
 def rule_predict_has_hazards(item: Dict[str, Any], ctx: Dict[str, Any]) -> List[str]:
     """has_hazards 段：用 table-lookup 引擎逐条 hazards -> hazard_label 列表。"""
     pred_labels = []
+    file_sourced = set()
     for h in item.get("hazards", []):
         if not isinstance(h, dict):
             continue
@@ -569,9 +598,15 @@ def rule_predict_has_hazards(item: Dict[str, Any], ctx: Dict[str, Any]) -> List[
             label_to_category_map=ctx["label_to_category_map"],
             allowed_hazard_lookup=ctx["allowed_hazard_lookup"], allowed_hazard_category_lookup=ctx["allowed_hazard_category_lookup"],
             allowed_hazard_labels=ctx["allowed_hazard_labels"], allowed_hazard_category_labels=ctx["allowed_hazard_category_labels"],
+            file_label_map=ctx.get("file_label_map"),
         )
         pred_labels.extend(labels)
-    return canonicalize_pred_labels(pred_labels, ctx["allowed_hazard_lookup"], ctx["allowed_hazard_labels"])
+        if _src == "mapping_file":
+            file_sourced.update(labels)
+    # 映射文件命中的标签保持原样，其余照旧规范化
+    rest = canonicalize_pred_labels([x for x in pred_labels if x not in file_sourced],
+                                    ctx["allowed_hazard_lookup"], ctx["allowed_hazard_labels"])
+    return sorted(set(rest) | file_sourced)
 
 
 # =========================
@@ -608,6 +643,15 @@ _CANON = {}
 def build_canon(label_list: List[str]):
     _CANON["keys"] = label_list
     _CANON["lookup"] = {_nk_fix(k): k for k in label_list}
+    # 权威映射文件产出的标签写法优先：936 词表里存在大小写重复
+    # （Salmonella Enteritidis / Salmonella enteritidis），字典构建顺序会把小写写法覆盖上去。
+    try:
+        for k, v in load_json(HAS_HAZARDS_MAPPING_HAZARD_LABEL_PATH).items():
+            lab = v.strip() if isinstance(v, str) and v.strip() else (k.strip() if isinstance(k, str) else "")
+            if lab and _nk_fix(lab) in _CANON["lookup"]:
+                _CANON["lookup"][_nk_fix(lab)] = lab
+    except Exception:
+        pass
     _CANON["keyset"] = set(_CANON["lookup"].keys())
     _CANON["aliases"] = {_nk_fix(k): v for k, v in _ALIASES_RAW.items()}
     _CANON["allergen"] = {_nk_fix(x) for x in _ALLERGEN_FOODS_RAW}

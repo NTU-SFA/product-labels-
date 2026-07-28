@@ -546,6 +546,21 @@ def infer_category_from_hazard(
     return ""
 
 
+def build_has_hazard_label_map(inventory: Dict[str, Any]) -> Dict[str, str]:
+    """权威映射表 has_hazards_mapping_hazard_label.json -> {规范化键: hazard_label}。
+
+    value 非空 = 改写（Fragments glass -> Foreign bodies）；value 为空 = 恒等（标签即 key）。
+    has_hazards 段 hazard_label 的第一优先来源，命中即采信。
+    """
+    out: Dict[str, str] = {}
+    for k, v in inventory.items():
+        if not isinstance(k, str) or not k.strip():
+            continue
+        label = v.strip() if isinstance(v, str) and v.strip() else k.strip()
+        out.setdefault(norm_key(k), label)
+    return out
+
+
 def build_has_hazards_exact_maps(
     has_labelled: List[Dict[str, Any]],
     label_to_category_map: Dict[str, str],
@@ -625,6 +640,7 @@ def map_has_hazard_item(
     allowed_hazard_category_lookup: Dict[str, str],
     allowed_hazard_labels: List[str],
     allowed_hazard_category_labels: List[str],
+    file_label_map: Dict[str, str] = None,
 ) -> Tuple[List[str], List[str], str]:
     nrawhaz = norm_key(raw_hazard)
     attr = extract_hazard_attribute(raw_hazard)
@@ -634,7 +650,15 @@ def map_has_hazard_item(
     cats = []
     source = "fallback"
 
-    if nrawhaz in raw_hazard_to_label:
+    # ① 权威映射文件优先：属性段 -> hazard 整串。命中即采信，不再走统计表与 canon 兜底。
+    file_label = ""
+    if file_label_map:
+        file_label = file_label_map.get(nattr) or file_label_map.get(nrawhaz) or ""
+
+    if file_label:
+        labels.append(file_label)
+        source = "mapping_file"
+    elif nrawhaz in raw_hazard_to_label:
         labels.append(raw_hazard_to_label[nrawhaz])
         source = "exact_raw_hazard"
     elif nattr in attr_to_label:
@@ -672,7 +696,8 @@ def map_has_hazard_item(
             if ccat:
                 cats.append(ccat)
 
-    labels = canonicalize_pred_labels(labels, allowed_hazard_lookup, allowed_hazard_labels)
+    if source != "mapping_file":            # 映射文件的标签是权威写法，不再二次规范化
+        labels = canonicalize_pred_labels(labels, allowed_hazard_lookup, allowed_hazard_labels)
     cats = canonicalize_pred_labels(cats, allowed_hazard_category_lookup, allowed_hazard_category_labels)
 
     return labels, cats, source
@@ -1262,6 +1287,7 @@ def main():
                         allowed_hazard_category_lookup=allowed_hazard_category_lookup,
                         allowed_hazard_labels=allowed_hazard_labels,
                         allowed_hazard_category_labels=allowed_hazard_category_labels,
+                        file_label_map=build_has_hazard_label_map(has_hazard_label_inventory),
                     )
 
                     pred_hazard_labels.extend(labels)
