@@ -1,21 +1,27 @@
 """
 混合 hazard 抽取（folder 版，单文件自包含，不 import 其它 .py）：
-  - has_hazards 记录（有结构化 hazards 字段）-> table-lookup 引擎（本文件内联，可靠）
-  - no_hazards  记录（只有 subject）        -> Claude LLM（泛化更好）
+  - has_hazards 记录（有结构化 hazards 字段）-> 纯查表，**不调 LLM**
+  - no_hazards  记录（只有 subject）        -> LLM
 
-LLM 候选标签 = mapping_hazard_label_to_hazard_category_label.json 的 keys（937 个）。
-hazard_category_label 一律由该映射从 hazard_label 推导。
-两段输出都过 canon937 统一规范化到 937 词表（别名/过敏原表见 hazard_canon_config.json）。
+规格（Ron / Dr Gong）：
+  * has_hazards：hazard 串取属性段（"Fragments glass - foreign bodies" -> "Fragments glass"），
+    查 has_hazards_mapping_hazard_label.json 得 hazard_label（value 非空=改写，为空=key 本身）。
+  * no_hazards：LLM 从候选集里指派 hazard_label，候选集 = mapping_hazard_label_to_
+    hazard_category_label.json 的 keys（当前 1021 个）。
+  * hazard_category_label：两段一律由该映射从 hazard_label 推导，绝不用 LLM。
 
 预测写进已有的 hazard_label / hazard_category_label 字段，保留 product_label，
-输出到新的 *_hazard_llm 文件夹。
+输出到新的 *_hazard_llm 文件夹。summary 里的 diagnostics 会暴露查表未命中、
+以及缺 category 映射的标签。
 
 外部依赖（数据/Prompt，非 .py）：
-  - hazard/ 下的 gold 与 mapping json
-  - hazard_no_hazards_prompt_V1.txt
+  - hazard/has_hazards_mapping_hazard_label.json
+  - hazard/mapping_hazard_label_to_hazard_category_label.json
+  - hazard_no_hazards_prompt_V3.txt（可用 PROMPT_PATH 覆盖；V2 保留作对照）
   - hazard_canon_config.json
-Python 包：langchain_aws, langchain_core, tqdm
-环境变量：AWS_BEARER_TOKEN_BEDROCK（下方有 setdefault 兜底）
+Python 包：langchain_aws, langchain_anthropic, langchain_core, tqdm
+环境变量：AWS_BEARER_TOKEN_BEDROCK（Bedrock）或 ANTHROPIC_API_KEY（直连）；
+         可选 AWS_REGION / CLAUDE_MODEL / RASFF_ROOT / INPUT_DIR / PROMPT_PATH
 """
 import os
 import re
@@ -23,36 +29,36 @@ import json
 import glob
 import unicodedata
 from string import Formatter
-from collections import defaultdict, Counter
+import threading
+from collections import Counter
 from typing import List, Dict, Any, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
 from langchain_aws import ChatBedrockConverse
+from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import PromptTemplate
 
 
 # =========================
 # 路径 & 数据文件
 # =========================
-# 项目根目录：本机默认绝对路径；Docker 里用 RASFF_ROOT=/app 覆盖，代码零改动。
+# 项目根目录：默认按本文件位置推导（仓库/容器里都对）；Docker 里用 RASFF_ROOT=/app 覆盖。
 RASFF_ROOT = os.environ.get("RASFF_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CODE_DIR = os.path.join(RASFF_ROOT, "Assay_attr_Extraction_Codes")
 HAZARD_DIR = os.path.join(RASFF_ROOT, "hazard")
 
-HAS_HAZARDS_LABELLED_PATH = os.path.join(HAZARD_DIR, "rasff_data_2020_to_2026_has_hazards_with_labels.json")
-NO_HAZARDS_LABELLED_PATH = os.path.join(HAZARD_DIR, "rasff_data_2020_to_2026_no_hazards_with_labels.json")
 HAS_HAZARDS_MAPPING_HAZARD_LABEL_PATH = os.path.join(HAZARD_DIR, "has_hazards_mapping_hazard_label.json")
 HAS_HAZARDS_MAPPING_HAZARD_CATEGORY_LABEL_PATH = os.path.join(HAZARD_DIR, "has_hazards_mapping_hazard_category_label.json")
-NO_HAZARDS_MAPPING1_PATH = os.path.join(HAZARD_DIR, "no_hazards_mapping1.json")
-NO_HAZARDS_MAPPING2_PATH = os.path.join(HAZARD_DIR, "no_hazards_mapping2.json")
 MAPPING_LABEL_TO_CATEGORY_PATH = os.path.join(HAZARD_DIR, "mapping_hazard_label_to_hazard_category_label.json")
 
 # 候选 hazard_label 集 = label->category 映射文件的 keys（937 个规范标签）
 LABEL_TO_CATEGORY_PATH = MAPPING_LABEL_TO_CATEGORY_PATH
 
-# no_hazards 段用的 prompt（外部文件）
-NO_HAZARD_PROMPT_PATH = os.path.join(CODE_DIR, "hazard_no_hazards_prompt_V1.txt")
+# no_hazards 段用的 prompt（外部文件）。V2 = 细粒度子标签版，对齐当前 1021 词表；
+# V1 对应旧词表，在 2024 GT 上只有 0.61（V2 为 0.81），保留仅为复现历史结果。
+NO_HAZARD_PROMPT_PATH = os.environ.get(
+    "PROMPT_PATH", os.path.join(CODE_DIR, "hazard_no_hazards_prompt_V3.txt"))
 
 # canon937 别名/过敏原配置（外部文件）
 CANON_CONFIG_PATH = os.path.join(CODE_DIR, "hazard_canon_config.json")
@@ -90,14 +96,16 @@ EXCLUDE_NAMES = ("prediction_summary_folder.json", "hazard_prediction_summary_fo
 # =========================
 # Bedrock / LLM 配置 + helper（内联自原 Claude_predict_folder.py）
 # =========================
-os.environ.setdefault(
-    "AWS_BEARER_TOKEN_BEDROCK",
-    "REPLACE_WITH_YOUR_AWS_BEARER_TOKEN_BEDROCK",
-)
-AWS_REGION = "ap-southeast-1"
-CLAUDE_MODEL = "global.anthropic.claude-sonnet-4-6"
+# 凭证只从环境变量读（AWS_BEARER_TOKEN_BEDROCK 或 ANTHROPIC_API_KEY），不再硬编码在源码里。
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
+CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "global.anthropic.claude-sonnet-4-6")
 TEMPERATURE = 0
 MAX_TOKENS = 1024
+
+# 后端选择：设置了 ANTHROPIC_API_KEY 就走 Anthropic 直连（claude-sonnet-4-6），
+# 否则回退到 Bedrock（保持历史跑法可复现）。
+USE_ANTHROPIC_DIRECT = bool(os.environ.get("ANTHROPIC_API_KEY"))
+ANTHROPIC_MODEL = "claude-sonnet-4-6"
 
 
 def load_json(fp: str):
@@ -148,20 +156,29 @@ def build_chain(prompt_path: str):
     prompt_text = load_text(prompt_path)
     prompt_variables = extract_template_variables(prompt_text)
     prompt = PromptTemplate(input_variables=prompt_variables, template=prompt_text)
-    llm = ChatBedrockConverse(
-        model=CLAUDE_MODEL,
-        region_name=AWS_REGION,
-        temperature=TEMPERATURE,
-        max_tokens=MAX_TOKENS,
-    )
+    if USE_ANTHROPIC_DIRECT:
+        llm = ChatAnthropic(
+            model=ANTHROPIC_MODEL,
+            temperature=TEMPERATURE,
+            max_tokens=MAX_TOKENS,
+            timeout=120,
+            max_retries=5,
+        )
+    else:
+        llm = ChatBedrockConverse(
+            model=CLAUDE_MODEL,
+            region_name=AWS_REGION,
+            temperature=TEMPERATURE,
+            max_tokens=MAX_TOKENS,
+        )
     return prompt | llm, prompt_variables
 
 
 # =========================
-# 规范化配置（全部外置到 hazard_canon_config.json，改表只需改文件）
+# 规范化配置（全部外置到 hazard_canon_config.json，改规则只需改文件）
 #   aliases             -> canon937 别名表（变体 -> 937 标准标签）
 #   allergen_foods      -> 过敏原食物名（出现即折叠为 Allergens）
-#   rule_manual_aliases -> table-lookup canonicalize_one_label 的别名表
+#   rule_manual_aliases -> 规则引擎 canonicalize_one_label 的别名表
 # =========================
 def _load_canon_config() -> Tuple[Dict[str, str], List[str], Dict[str, str]]:
     try:
@@ -180,20 +197,8 @@ _ALIASES_RAW, _ALLERGEN_FOODS_RAW, _MANUAL_ALIASES = _load_canon_config()
 
 
 # =========================
-# table-lookup 引擎（has_hazards 段，内联自原 hazard_eval.py，仅保留 has 路径所需）
+# 文本规范化（两段共用）
 # =========================
-def normalize_labels(labels: List[str]) -> List[str]:
-    if not isinstance(labels, list):
-        return []
-    out = []
-    for x in labels:
-        if isinstance(x, str):
-            x = x.strip()
-            if x:
-                out.append(x)
-    return sorted(list(set(out)))
-
-
 def normalize_text_for_match(text: str) -> str:
     if text is None:
         return ""
@@ -223,28 +228,6 @@ def extract_hazard_attribute(raw_hazard: str) -> str:
     if not raw_hazard:
         return ""
     return raw_hazard.split(" - ")[0].strip()
-
-
-def build_preferred_lookup_from_gold(rows: List[Dict[str, Any]], field: str) -> Dict[str, str]:
-    counts = defaultdict(Counter)
-    for row in rows:
-        for x in row.get(field, []):
-            if isinstance(x, str) and x.strip():
-                counts[norm_key(x)][x.strip()] += 1
-    preferred = {}
-    for k, c in counts.items():
-        best = sorted(c.items(), key=lambda z: (-z[1], len(z[0]), z[0]))[0][0]
-        preferred[k] = best
-    return preferred
-
-
-def merge_preferred_and_allowed(preferred_lookup: Dict[str, str], allowed_labels: List[str]) -> Dict[str, str]:
-    merged = dict(preferred_lookup)
-    for x in allowed_labels:
-        k = norm_key(x)
-        if k not in merged:
-            merged[k] = x
-    return merged
 
 
 def canonicalize_one_label(x: str, allowed_lookup: Dict[str, str], allowed_labels: List[str]) -> str:
@@ -288,147 +271,38 @@ def canonicalize_one_label(x: str, allowed_lookup: Dict[str, str], allowed_label
     return raw
 
 
-def canonicalize_pred_labels(pred: List[str], allowed_lookup: Dict[str, str], allowed_labels: List[str]) -> List[str]:
-    out = []
-    for x in pred:
-        c = canonicalize_one_label(x, allowed_lookup, allowed_labels)
-        if c:
-            out.append(c)
-    return normalize_labels(out)
+def remove_generic_when_specific_exists(labels: List[str], generic_label: str, prefix: str) -> List[str]:
+    has_specific = any(x.startswith(prefix) and x != generic_label for x in labels)
+    if has_specific and generic_label in labels:
+        labels = [x for x in labels if x != generic_label]
+    return labels
 
 
-def build_allowed_label_sets(
-    has_labelled, no_labelled, has_hazard_label_inventory, has_hazard_category_inventory,
-    no_mapping1, no_mapping2, label_to_category,
-) -> Tuple[List[str], List[str]]:
-    hazard_labels = set()
-    hazard_category_labels = set()
+class _SafeCounter:
+    """诊断计数器。predict_one_file 在线程池里并发跑，共享同一个 ctx，故加锁。"""
 
-    for row in has_labelled + no_labelled:
-        for x in row.get("hazard_label", []):
-            if isinstance(x, str) and x.strip():
-                hazard_labels.add(x.strip())
-        for x in row.get("hazard_category_label", []):
-            if isinstance(x, str) and x.strip():
-                hazard_category_labels.add(x.strip())
+    def __init__(self):
+        self._c = Counter()
+        self._lock = threading.Lock()
 
-    for k, v in has_hazard_label_inventory.items():
-        if isinstance(k, str) and k.strip():
-            hazard_labels.add(k.strip())
-        if isinstance(v, str) and v.strip():
-            hazard_labels.add(v.strip())
+    def __setitem__(self, key, value):
+        with self._lock:
+            self._c[key] = value
 
-    for k, v in has_hazard_category_inventory.items():
-        if isinstance(k, str) and k.strip():
-            hazard_category_labels.add(k.strip())
-        if isinstance(v, str) and v.strip():
-            hazard_category_labels.add(v.strip())
+    def __getitem__(self, key):
+        with self._lock:
+            return self._c[key]
 
-    for mp in [no_mapping1, no_mapping2]:
-        for k, v in mp.items():
-            if not isinstance(k, str) or not isinstance(v, dict):
-                continue
-            hl = v.get("hazard_label", "")
-            hc = v.get("hazard_category_label", "")
-            if isinstance(hl, str):
-                hl = hl.strip() or k.strip()
-                if hl:
-                    hazard_labels.add(hl)
-            elif isinstance(hl, list):
-                for x in hl:
-                    if isinstance(x, str) and x.strip():
-                        hazard_labels.add(x.strip())
-            if isinstance(hc, str):
-                hc = hc.strip() or k.strip()
-                if hc:
-                    hazard_category_labels.add(hc)
-            elif isinstance(hc, list):
-                for x in hc:
-                    if isinstance(x, str) and x.strip():
-                        hazard_category_labels.add(x.strip())
-
-    for k, v in label_to_category.items():
-        if isinstance(k, str) and k.strip():
-            hazard_labels.add(k.strip())
-        if isinstance(v, str) and v.strip():
-            hazard_category_labels.add(v.strip())
-
-    return sorted(hazard_labels), sorted(hazard_category_labels)
-
-
-def compile_label_to_category_map(label_to_category_raw, allowed_hazard_lookup, allowed_hazard_category_lookup) -> Dict[str, str]:
-    compiled = {}
-    for raw_label, raw_cat in label_to_category_raw.items():
-        if not isinstance(raw_label, str) or not isinstance(raw_cat, str):
-            continue
-        nlabel = norm_key(raw_label)
-        ncat = norm_key(raw_cat)
-        if not nlabel or not ncat:
-            continue
-        canon_label = allowed_hazard_lookup.get(nlabel, raw_label.strip())
-        canon_cat = allowed_hazard_category_lookup.get(ncat, raw_cat.strip())
-        compiled[canon_label] = canon_cat
-    return compiled
-
-
-def infer_label_from_attr(attr, gold_labels, allowed_hazard_lookup, allowed_hazard_labels) -> str:
-    if not gold_labels:
-        return ""
-    nattr = norm_key(attr)
-    gold_norm = {norm_key(g): g for g in gold_labels}
-    if len(gold_labels) == 1:
-        return gold_labels[0]
-    if nattr in gold_norm:
-        return gold_norm[nattr]
-    if "aflatoxin" in nattr and "Aflatoxins" in gold_labels:
-        return "Aflatoxins"
-    for g in gold_labels:
-        ng = norm_key(g)
-        if ng == nattr or ng in nattr or nattr in ng:
-            return g
-    can_attr = canonicalize_one_label(attr, allowed_hazard_lookup, allowed_hazard_labels)
-    if can_attr in gold_labels:
-        return can_attr
-    return ""
-
-
-def infer_category_from_hazard(raw_hazard, raw_category, gold_categories, chosen_label,
-                               label_to_category_map, allowed_hazard_category_lookup, allowed_hazard_category_labels) -> str:
-    if not gold_categories:
-        return ""
-    nrawhaz = norm_key(raw_hazard)
-    nrawcat = norm_key(raw_category)
-    gold_norm = {norm_key(g): g for g in gold_categories}
-    if len(gold_categories) == 1:
-        return gold_categories[0]
-    if "undeclared" in nrawhaz and "allergen" in nrawhaz and "allergens" in gold_norm:
-        return gold_norm["allergens"]
-    if "residues of veterinary medicinal products" in nrawcat and "veterinary drug residues" in gold_norm:
-        return gold_norm["veterinary drug residues"]
-    if chosen_label and chosen_label in label_to_category_map:
-        mapped = label_to_category_map[chosen_label]
-        if mapped in gold_categories:
-            return mapped
-    if nrawcat in gold_norm:
-        return gold_norm[nrawcat]
-    if "pesticide residues" in nrawcat and "Pesticide residues" in gold_categories:
-        return "Pesticide residues"
-    if "food additives" in nrawcat and "Food additives" in gold_categories:
-        return "Food additives"
-    if "novel food" in nrawcat and "Novel food" in gold_categories:
-        return "Novel food"
-    can_cat = canonicalize_one_label(raw_category, allowed_hazard_category_lookup, allowed_hazard_category_labels)
-    if can_cat in gold_categories:
-        return can_cat
-    return ""
+    def as_dict(self) -> Dict[str, int]:
+        with self._lock:
+            return dict(self._c)
 
 
 def build_has_hazard_label_map(inventory: Dict[str, Any]) -> Dict[str, str]:
     """权威映射表 has_hazards_mapping_hazard_label.json -> {规范化键: hazard_label}。
 
-    文件里两种写法：value 非空 = 改写（Fragments glass -> Foreign bodies）；
+    文件里两种写法：value 非空 = 改写（Fragments glass -> Foreign bodies (glass)）；
     value 为空 = 恒等（标签即 key 本身，如 Cyanide / Salmonella Altona）。
-    这是 has_hazards 段 hazard_label 的第一优先来源，命中即采信。
     """
     out: Dict[str, str] = {}
     for k, v in inventory.items():
@@ -439,174 +313,58 @@ def build_has_hazard_label_map(inventory: Dict[str, Any]) -> Dict[str, str]:
     return out
 
 
-def build_has_hazards_exact_maps(has_labelled, label_to_category_map, allowed_hazard_lookup, allowed_hazard_labels,
-                                 allowed_hazard_category_lookup, allowed_hazard_category_labels):
-    raw_hazard_to_label_counts = defaultdict(Counter)
-    raw_hazard_to_cat_counts = defaultdict(Counter)
-    attr_to_label_counts = defaultdict(Counter)
-    attr_to_cat_counts = defaultdict(Counter)
-
-    for row in has_labelled:
-        gold_labels = normalize_labels(row.get("hazard_label", []))
-        gold_categories = normalize_labels(row.get("hazard_category_label", []))
-        for h in row.get("hazards", []):
-            if not isinstance(h, dict):
-                continue
-            raw_hazard = h.get("hazard", "")
-            raw_category = h.get("category", "") or h.get("hazard_category", "")
-            nrawhaz = norm_key(raw_hazard)
-            attr = extract_hazard_attribute(raw_hazard)
-            nattr = norm_key(attr)
-            if not nrawhaz:
-                continue
-            chosen_label = infer_label_from_attr(attr, gold_labels, allowed_hazard_lookup, allowed_hazard_labels)
-            if chosen_label:
-                raw_hazard_to_label_counts[nrawhaz][chosen_label] += 1
-                attr_to_label_counts[nattr][chosen_label] += 1
-            chosen_cat = infer_category_from_hazard(
-                raw_hazard, raw_category, gold_categories, chosen_label,
-                label_to_category_map, allowed_hazard_category_lookup, allowed_hazard_category_labels,
-            )
-            if chosen_cat:
-                raw_hazard_to_cat_counts[nrawhaz][chosen_cat] += 1
-                attr_to_cat_counts[nattr][chosen_cat] += 1
-
-    def pick_best(counter_map):
-        out = {}
-        for k, cnt in counter_map.items():
-            out[k] = sorted(cnt.items(), key=lambda z: (-z[1], len(z[0]), z[0]))[0][0]
-        return out
-
-    return (pick_best(raw_hazard_to_label_counts), pick_best(raw_hazard_to_cat_counts),
-            pick_best(attr_to_label_counts), pick_best(attr_to_cat_counts))
-
-
-def map_has_hazard_item(raw_hazard, raw_category, raw_hazard_to_label, raw_hazard_to_cat, attr_to_label, attr_to_cat,
-                        label_to_category_map, allowed_hazard_lookup, allowed_hazard_category_lookup,
-                        allowed_hazard_labels, allowed_hazard_category_labels,
-                        file_label_map=None):
-    nrawhaz = norm_key(raw_hazard)
-    attr = extract_hazard_attribute(raw_hazard)
-    nattr = norm_key(attr)
-    labels = []
-    cats = []
-    source = "fallback"
-
-    # ① 权威映射文件优先：先按属性段查，再按 hazard 整串查。命中即采信，
-    #    不再走历史语料统计表，也不再过 canon 兜底（文件给的就是规范标签）。
-    file_label = ""
-    if file_label_map:
-        file_label = file_label_map.get(nattr) or file_label_map.get(nrawhaz) or ""
-
-    if file_label:
-        labels.append(file_label)
-        source = "mapping_file"
-    elif nrawhaz in raw_hazard_to_label:
-        labels.append(raw_hazard_to_label[nrawhaz])
-        source = "exact_raw_hazard"
-    elif nattr in attr_to_label:
-        labels.append(attr_to_label[nattr])
-        source = "attribute_mapping"
-    else:
-        label = canonicalize_one_label(attr, allowed_hazard_lookup, allowed_hazard_labels)
-        if label:
-            labels.append(label)
-        source = "canonical_fallback"
-
-    chosen_label = labels[0] if labels else ""
-
-    if nrawhaz in raw_hazard_to_cat:
-        cats.append(raw_hazard_to_cat[nrawhaz])
-    elif nattr in attr_to_cat:
-        cats.append(attr_to_cat[nattr])
-    else:
-        nrawcat = norm_key(raw_category)
-        if "undeclared" in nrawhaz and "allergen" in nrawhaz:
-            cats.append("Allergens")
-        elif "residues of veterinary medicinal products" in nrawcat:
-            cats.append("Veterinary drug residues")
-        elif chosen_label and chosen_label in label_to_category_map:
-            cats.append(label_to_category_map[chosen_label])
-        elif "pesticide residues" in nrawcat:
-            cats.append("Pesticide residues")
-        elif "food additives" in nrawcat:
-            cats.append("Food additives")
-        elif "novel food" in nrawcat:
-            cats.append("Novel food")
-        else:
-            ccat = canonicalize_one_label(raw_category, allowed_hazard_category_lookup, allowed_hazard_category_labels)
-            if ccat:
-                cats.append(ccat)
-
-    if source != "mapping_file":                 # 映射文件的标签是权威写法，不再二次规范化
-        labels = canonicalize_pred_labels(labels, allowed_hazard_lookup, allowed_hazard_labels)
-    cats = canonicalize_pred_labels(cats, allowed_hazard_category_lookup, allowed_hazard_category_labels)
-    return labels, cats, source
-
-
-def remove_generic_when_specific_exists(labels: List[str], generic_label: str, prefix: str) -> List[str]:
-    has_specific = any(x.startswith(prefix) and x != generic_label for x in labels)
-    if has_specific and generic_label in labels:
-        labels = [x for x in labels if x != generic_label]
-    return labels
-
-
 def build_context() -> Dict[str, Any]:
-    """构建 has_hazards table-lookup 引擎所需的全部查表（一次性）。"""
-    has_data = load_json(HAS_HAZARDS_LABELLED_PATH)
-    no_data = load_json(NO_HAZARDS_LABELLED_PATH)
-    has_hazard_label_inventory = load_json(HAS_HAZARDS_MAPPING_HAZARD_LABEL_PATH)
-    has_hazard_category_inventory = load_json(HAS_HAZARDS_MAPPING_HAZARD_CATEGORY_LABEL_PATH)
-    no_mapping1_raw = load_json(NO_HAZARDS_MAPPING1_PATH)
-    no_mapping2_raw = load_json(NO_HAZARDS_MAPPING2_PATH)
-    label_to_category_raw = load_json(MAPPING_LABEL_TO_CATEGORY_PATH)
+    """构建 has_hazards 段所需的查表（一次性）。
 
-    allowed_hazard_labels, allowed_hazard_category_labels = build_allowed_label_sets(
-        has_data, no_data, has_hazard_label_inventory, has_hazard_category_inventory,
-        no_mapping1_raw, no_mapping2_raw, label_to_category_raw,
-    )
-    preferred_hazard_lookup = build_preferred_lookup_from_gold(has_data + no_data, "hazard_label")
-    preferred_hazard_category_lookup = build_preferred_lookup_from_gold(has_data + no_data, "hazard_category_label")
-    allowed_hazard_lookup = merge_preferred_and_allowed(preferred_hazard_lookup, allowed_hazard_labels)
-    allowed_hazard_category_lookup = merge_preferred_and_allowed(preferred_hazard_category_lookup, allowed_hazard_category_labels)
-    label_to_category_map = compile_label_to_category_map(label_to_category_raw, allowed_hazard_lookup, allowed_hazard_category_lookup)
-    raw_hazard_to_label, raw_hazard_to_cat, attr_to_label, attr_to_cat = build_has_hazards_exact_maps(
-        has_data, label_to_category_map, allowed_hazard_lookup, allowed_hazard_labels,
-        allowed_hazard_category_lookup, allowed_hazard_category_labels,
-    )
+    规格（Ron / Dr Gong）：有 hazards 数据的记录**不用 LLM**，hazard_label 由
+    has_hazards_mapping_hazard_label.json 查表得出，hazard_category_label 再由
+    mapping_hazard_label_to_hazard_category_label.json 从 hazard_label 推导。
+
+    历史上这里还挂了一层从 rasff_data_2020_to_2026_*_with_labels.json 统计出来的
+    兜底表（raw_hazard_to_label / attr_to_label 等）。那两份 gold 语料已被删除，
+    这层兜底既无法重建、也超出上述「只查表」规格，故移除；仅保留只依赖 1021 词表的
+    canon937 兜底作为安全网（见 rule_predict_has_hazards）。在 2020–2026 全量
+    has_hazards 语料的 32350 条 hazard 上，映射文件命中率为 100.000%，安全网不触发。
+    """
     return {
-        "file_label_map": build_has_hazard_label_map(has_hazard_label_inventory),
-        "raw_hazard_to_label": raw_hazard_to_label, "raw_hazard_to_cat": raw_hazard_to_cat,
-        "attr_to_label": attr_to_label, "attr_to_cat": attr_to_cat,
-        "label_to_category_map": label_to_category_map,
-        "allowed_hazard_labels": allowed_hazard_labels, "allowed_hazard_category_labels": allowed_hazard_category_labels,
-        "allowed_hazard_lookup": allowed_hazard_lookup, "allowed_hazard_category_lookup": allowed_hazard_category_lookup,
+        "file_label_map": build_has_hazard_label_map(load_json(HAS_HAZARDS_MAPPING_HAZARD_LABEL_PATH)),
+        "stats": _SafeCounter(),
     }
 
 
 def rule_predict_has_hazards(item: Dict[str, Any], ctx: Dict[str, Any]) -> List[str]:
-    """has_hazards 段：用 table-lookup 引擎逐条 hazards -> hazard_label 列表。"""
-    pred_labels = []
-    file_sourced = set()
+    """has_hazards 段：逐条 hazards -> hazard_label（纯查表，不调 LLM）。
+
+    ① hazard 串先经 extract_hazard_attribute 取属性段（"Fragments glass - foreign
+       bodies" -> "Fragments glass"），查映射文件；未命中再用 hazard 整串查。
+    ② 安全网：映射文件没有这条写法时，用 canon937 往 1021 词表靠；靠不上就跳过
+       （宁可留空也不猜，避免污染输出）。触发次数记进 ctx["stats"]，会写入 summary。
+    """
+    stats = ctx.get("stats")
+    file_label_map = ctx["file_label_map"]
+    labels = []
     for h in item.get("hazards", []):
         if not isinstance(h, dict):
             continue
-        labels, _cats, _src = map_has_hazard_item(
-            raw_hazard=h.get("hazard", ""), raw_category=h.get("category", "") or h.get("hazard_category", ""),
-            raw_hazard_to_label=ctx["raw_hazard_to_label"], raw_hazard_to_cat=ctx["raw_hazard_to_cat"],
-            attr_to_label=ctx["attr_to_label"], attr_to_cat=ctx["attr_to_cat"],
-            label_to_category_map=ctx["label_to_category_map"],
-            allowed_hazard_lookup=ctx["allowed_hazard_lookup"], allowed_hazard_category_lookup=ctx["allowed_hazard_category_lookup"],
-            allowed_hazard_labels=ctx["allowed_hazard_labels"], allowed_hazard_category_labels=ctx["allowed_hazard_category_labels"],
-            file_label_map=ctx.get("file_label_map"),
-        )
-        pred_labels.extend(labels)
-        if _src == "mapping_file":
-            file_sourced.update(labels)
-    # 映射文件命中的标签保持原样，其余照旧规范化
-    rest = canonicalize_pred_labels([x for x in pred_labels if x not in file_sourced],
-                                    ctx["allowed_hazard_lookup"], ctx["allowed_hazard_labels"])
-    return sorted(set(rest) | file_sourced)
+        raw = h.get("hazard", "") or ""
+        if not str(raw).strip():
+            continue
+        attr = extract_hazard_attribute(raw)
+        lab = file_label_map.get(norm_key(attr)) or file_label_map.get(norm_key(raw))
+        if lab:
+            labels.append(lab)
+            if stats is not None:
+                stats["mapping_file"] += 1
+            continue
+        fallback = canon_list([attr])                      # 只依赖词表，不依赖已删除的 gold
+        fallback = [x for x in fallback if _nk_fix(x) in (_CANON.get("keyset") or set())]
+        if fallback:
+            labels.extend(fallback)
+            if stats is not None:
+                stats["canon_fallback"] += 1
+        elif stats is not None:
+            stats["unmapped_hazard"] += 1
+    return sorted(set(labels))
 
 
 # =========================
@@ -627,7 +385,7 @@ def build_label_space() -> Tuple[List[str], Dict[str, str], Dict[str, str]]:
 
 # =========================
 # 统一规范化到 937-key 词表（两段共用）
-# 别名表 / 过敏原食物表外置到 hazard_canon_config.json，改表只需改文件。
+# 别名表 / 过敏原食物表外置到 hazard_canon_config.json，改规则只需改文件。
 # =========================
 def _nk_fix(x: str) -> str:
     nk = norm_key(x)
@@ -683,11 +441,18 @@ def canon937(x: str) -> str:
 
 
 def canon_list(labels: List[str]) -> List[str]:
+    """规范化一组标签。别名表（hazard_canon_config.json）里存在指向**已废弃标签**的死链
+    （例如 Moulds -> Mould，而 Mould 已不在词表里），套用后会被下游按“词表外”丢掉，
+    等于把对的答案改成错的。因此只在规范化结果仍落在词表内时才采用，否则保留原标签。"""
+    keyset = _CANON.get("keyset") or set()
     out = []
     for x in labels:
+        if not isinstance(x, str) or not x.strip():
+            continue
         c = canon937(x)
-        if c:
-            out.append(c)
+        if not c:
+            continue
+        out.append(c if (not keyset or _nk_fix(c) in keyset) else x.strip())
     return sorted(set(out))
 
 
@@ -725,28 +490,49 @@ def post_process_labels(labels: List[str]) -> List[str]:
     return sorted(set(labels))
 
 
-def derive_categories(labels: List[str], label_to_cat: Dict[str, str]) -> List[str]:
-    """hazard_category_label 一律由 hazard_label 经映射推导。"""
+def derive_categories(labels: List[str], label_to_cat: Dict[str, str], stats=None) -> List[str]:
+    """hazard_category_label 一律由 hazard_label 经映射推导（绝不用 LLM）。
+
+    映射文件里查不到 category 的标签会让 hazard_category_label 变空——这是数据问题
+    （如 Bacterial contamination / Not in catalogue / Toxin unknown 不在映射 keys 里），
+    不是代码问题，所以记进 stats 让它在 summary 里可见，而不是静默丢掉。
+    """
+    nk_to_cat = {norm_key(k): v for k, v in label_to_cat.items()}
     cats = []
     for l in labels:
-        c = label_to_cat.get(l)
+        c = label_to_cat.get(l) or nk_to_cat.get(norm_key(l))
         if c:
             cats.append(c)
+        elif stats is not None:
+            stats["label_without_category:" + l] += 1
     return sorted(set(cats))
 
 
 # =========================
 # no_hazards 段：LLM 预测
 # =========================
-def predict_no_hazard_record(item, chain, prompt_variables, allowed_labels_str, label_lookup, label_to_cat) -> Tuple[List[str], List[str]]:
-    product_type_value = safe_get(item, "product_type") or safe_get(item, "notification_type")
+def predict_no_hazard_record(item, chain, prompt_variables, allowed_labels_str, label_lookup, label_to_cat,
+                             stats=None) -> Tuple[List[str], List[str]]:
+    product_type_value = (
+        safe_get(item, "product_type")
+        or safe_get(item, "notification_product_type")   # ASEAN: 真实产品类型（Food/Feed/...）
+        or safe_get(item, "notification_type")
+    )
+    # 兼容 ASEAN ARASFF：优先使用显式 hazard 字符串字段作为主信号，subject 作为补充。
+    # （RASFF 无 hazard 字段时自动退回只用 subject，行为不变。）
+    raw_hazard = safe_get(item, "hazard").strip()
+    base_subject = safe_get(item, "subject")
+    if raw_hazard:
+        subject_value = f"Reported hazard(s): {raw_hazard}\n\nNotification subject: {base_subject}"
+    else:
+        subject_value = base_subject
     full_payload = {
         "allowed_hazard_labels": allowed_labels_str,
         "product_type": product_type_value,
         "notification_type": product_type_value,
         "product_category": safe_get(item, "product_category"),
         "product": safe_get(item, "product"),
-        "subject": safe_get(item, "subject"),
+        "subject": subject_value,
     }
     payload = {k: full_payload[k] for k in prompt_variables if k in full_payload}
 
@@ -755,11 +541,13 @@ def predict_no_hazard_record(item, chain, prompt_variables, allowed_labels_str, 
     if isinstance(parsed, list):
         parsed = {"hazard_label": parsed}
 
-    # LLM 只预测 hazard_label；清洗 -> 统一规范化到 937 词表；category 由映射推导
-    labels = canon_filter(parsed.get("hazard_label", []), label_lookup)
+    # LLM 只预测 hazard_label。顺序与已验证的评估脚本一致：
+    # 先 canon_list 把旧词表写法救回来，再过词表丢掉词表外的，最后清洗。
+    # （过词表之后不能再 canon_list：此时标签已是词表成员，再规范化只会把它踢出词表。）
+    labels = canon_list(parsed.get("hazard_label", []) or [])
+    labels = canon_filter(labels, label_lookup)
     labels = post_process_labels(labels)
-    labels = canon_list(labels)
-    cats = derive_categories(labels, label_to_cat)
+    cats = derive_categories(labels, label_to_cat, stats)
     return labels, cats
 
 
@@ -769,6 +557,12 @@ def predict_no_hazard_record(item, chain, prompt_variables, allowed_labels_str, 
 def predict_one_file(input_fp, ctx, chain, prompt_variables,
                      allowed_labels_str, label_lookup, label_to_cat, output_dir) -> Dict[str, int]:
     data = load_json(input_fp)
+    # 空/None 通知：原样写出、跳过标注，不中断整批
+    if data is None:
+        out_fp = input_fp if OVERWRITE_IN_PLACE else os.path.join(output_dir, os.path.basename(input_fp))
+        with open(out_fp, "w", encoding="utf-8") as f:
+            json.dump(None, f, ensure_ascii=False, indent=2)
+        return {"records": 0, "errors": 0, "has_hazards": 0, "no_hazards_llm": 0}
     single_record = False
     if isinstance(data, dict):
         data = [data]
@@ -786,12 +580,14 @@ def predict_one_file(input_fp, ctx, chain, prompt_variables,
         has_hazards = isinstance(haz, list) and len(haz) > 0
         try:
             if has_hazards:
-                labels = canon_list(rule_predict_has_hazards(item, ctx))   # table-lookup -> 统一到 937
-                cats = derive_categories(labels, label_to_cat)             # category 由映射推导
+                # 纯查表，不调 LLM。映射文件给出的就是权威写法，不再二次规范化。
+                labels = rule_predict_has_hazards(item, ctx)
+                cats = derive_categories(labels, label_to_cat, ctx.get("stats"))
                 n_has += 1
             else:
                 labels, cats = predict_no_hazard_record(
                     item, chain, prompt_variables, allowed_labels_str, label_lookup, label_to_cat,
+                    ctx.get("stats"),
                 )                                                          # LLM
                 n_no += 1
 
@@ -835,21 +631,25 @@ def collect_input_files(input_dir):
 
 
 def main():
-    if not os.environ.get("AWS_BEARER_TOKEN_BEDROCK"):
-        raise ValueError("Please set a valid AWS_BEARER_TOKEN_BEDROCK.")
+    if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("AWS_BEARER_TOKEN_BEDROCK")):
+        raise ValueError("Set ANTHROPIC_API_KEY (Anthropic direct) or AWS_BEARER_TOKEN_BEDROCK (Bedrock).")
 
-    print("Building table-lookup engine (for has_hazards) ...")
+    print("Building label space + normalization ...")
+    label_list, label_lookup, label_to_cat = build_label_space()
+    build_canon(label_list)   # 统一规范化资源（词表 + alias + 过敏原折叠）
+
+    print("Building has_hazards lookup table (no LLM) ...")
     ctx = build_context()
 
-    print("Building no_hazards LLM label space + chain ...")
-    label_list, label_lookup, label_to_cat = build_label_space()
-    build_canon(label_list)   # 统一规范化资源（937 词表 + alias + 过敏原折叠）
+    print("Building no_hazards LLM chain ...")
     allowed_labels_str = json.dumps(label_list, ensure_ascii=False)
     chain, prompt_variables = build_chain(NO_HAZARD_PROMPT_PATH)
     print(f"  candidate hazard_label: {len(label_list)} (= mapping keys)")
     print(f"  distinct derived categories: {len(set(label_to_cat.values()))}")
-    print(f"  prompt variables: {prompt_variables}")
-    print(f"  model: {CLAUDE_MODEL}")
+    print(f"  has_hazards mapping keys: {len(ctx['file_label_map'])}")
+    print(f"  prompt: {os.path.basename(NO_HAZARD_PROMPT_PATH)} | variables: {prompt_variables}")
+    print(f"  model: {CLAUDE_MODEL} @ {AWS_REGION}"
+          f"{' (Anthropic direct)' if USE_ANTHROPIC_DIRECT else ' (Bedrock)'}")
 
     grand = []
     for input_dir in INPUT_DIRS:
@@ -887,6 +687,7 @@ def main():
                 stats["no_hazards_llm"] += s["no_hazards_llm"]
                 stats["errors"] += s["errors"]
 
+        diag = ctx["stats"].as_dict()
         dir_summary = {
             "input_dir": input_dir,
             "output_dir": output_dir,
@@ -895,7 +696,19 @@ def main():
             "no_hazards_llm": stats["no_hazards_llm"],
             "errors": stats["errors"],
             "model": CLAUDE_MODEL,
+            "prompt": os.path.basename(NO_HAZARD_PROMPT_PATH),
+            # 诊断：mapping_file=查表命中；canon_fallback=映射文件没这条写法、走了词表安全网；
+            # unmapped_hazard=两者都不行（label 留空）；label_without_category:X=X 缺 category 映射。
+            "diagnostics": diag,
         }
+        for key, msg in (("canon_fallback", "has_hazards 有 hazard 写法不在映射文件里，走了词表安全网"),
+                         ("unmapped_hazard", "has_hazards 有 hazard 完全无法映射，hazard_label 留空")):
+            if diag.get(key):
+                print(f"[Warn] {msg}: {diag[key]} 条 —— 建议补进 has_hazards_mapping_hazard_label.json")
+        nocat = {k.split(":", 1)[1]: v for k, v in diag.items() if k.startswith("label_without_category:")}
+        if nocat:
+            print(f"[Warn] 这些 hazard_label 在 mapping_hazard_label_to_hazard_category_label.json 里"
+                  f"没有 category，对应记录的 hazard_category_label 会是空: {nocat}")
         with open(os.path.join(output_dir, "hazard_prediction_summary_folder.json"), "w", encoding="utf-8") as f:
             json.dump(dir_summary, f, indent=2, ensure_ascii=False)
         print(f"Done: {dir_summary}")
