@@ -410,7 +410,16 @@ def build_canon(label_list: List[str]):
     except Exception:
         pass
     _CANON["keyset"] = set(_CANON["lookup"].keys())
-    _CANON["aliases"] = {_nk_fix(k): v for k, v in _ALIASES_RAW.items()}
+    # 别名表是按旧的 936 词表写的，部分目标写法在 1021 词表里已经不存在
+    # （"moulds" -> "Mould"，而现在词表只有 "Moulds"）。canon937 命中别名后是无条件
+    # 返回的，于是这些别名会把已经正确的标签改错。这里先按词表校准一次：目标不在
+    # 词表内的整条丢掉，让原标签自己走后面的匹配逻辑。不改 hazard_canon_config.json。
+    aliases = {}
+    for k, v in _ALIASES_RAW.items():
+        nk = _nk_fix(k)
+        if nk and isinstance(v, str) and v.strip() and _nk_fix(v) in _CANON["keyset"]:
+            aliases[nk] = _CANON["lookup"][_nk_fix(v)]
+    _CANON["aliases"] = aliases
     _CANON["allergen"] = {_nk_fix(x) for x in _ALLERGEN_FOODS_RAW}
 
 
@@ -420,10 +429,12 @@ def canon937(x: str) -> str:
     nk = _nk_fix(x)
     if nk in _CANON["allergen"]:
         return "Allergens"
-    if nk in _CANON["aliases"]:
-        return _CANON["aliases"][nk]
+    # 词表命中优先于别名表：别名表里有 "nicotinamide mononucleotide (nmn)" -> "Novel food"
+    # 这种把已经合法的具体标签折叠回旧兜底标签的条目。已在 1021 词表里的一律不改写。
     if nk in _CANON["keyset"]:
         return _CANON["lookup"][nk]
+    if nk in _CANON["aliases"]:
+        return _CANON["aliases"][nk]
     m = re.search(r"\be(\d{3,4})", nk)                   # E 编号唯一前缀匹配
     if m:
         base = "e" + m.group(1)

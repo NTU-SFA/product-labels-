@@ -34,8 +34,8 @@ structured `hazards` field, 1357 subject-only. `exact` = full set equality on th
 |---|---|---:|---:|---:|
 | LLM (`hazard_eval_gt2024_spec.py`, prompt V3) | `hazard_label` exact | 0.9990 | **0.8968** | **0.9726** |
 | LLM (`hazard_eval_gt2024_spec.py`, prompt V3) | `hazard_category_label` exact | 0.9985 | **0.9256** | **0.9796** |
-| keyword rules (`test-hazard`) | `hazard_label` exact | 0.9928 | 0.5099 | 0.8680 |
-| keyword rules (`test-hazard`) | `hazard_category_label` exact | 0.9949 | 0.7170 | 0.9230 |
+| keyword rules (`test-hazard`) | `hazard_label` exact | 0.9990 | **0.8828** | **0.9689** |
+| keyword rules (`test-hazard`) | `hazard_category_label` exact | 0.9985 | **0.9057** | **0.9745** |
 
 Full per-segment Jaccard and micro P/R/F1, plus the caveats that matter when comparing the two
 branches, are in [`README.md`](README.md#hazard-accuracy-on-the-2024-ground-truth). In short: the

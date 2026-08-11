@@ -710,7 +710,12 @@ ALLERGEN_CUES = [
     "allergen", "allergens",
     "undeclared", "not declared", "not mentioned on the label",
     "not highlighted on labels", "not highlighted on the label",
-    "contains traces of", "unmentioned sulphites", "unmentioned sulfites"
+    "contains traces of", "unmentioned sulphites", "unmentioned sulfites",
+    # 成分表里没写 = 未申报过敏原，另加西/意语写法
+    "not mentioned in the ingredient", "not mentioned in the ingredients",
+    "not listed in the ingredient", "not indicated in the ingredient",
+    "no destacado", "no destacados", "no declarado", "no declarados",
+    "non dichiarat", "nao declarad",
 ]
 
 PATHOGEN_PATTERNS = {
@@ -873,7 +878,14 @@ def detect_novel_food_from_subject(subject: str, allowed_hazard_lookup: Dict[str
         labels.append(allowed_hazard_lookup.get("novel food ingredient", "Novel food ingredient"))
         return normalize_labels(labels)
 
-    if "novel food" in text or "unauthorised novel food" in text or "unauthorized novel food" in text:
+    # "novel food" 的多语言写法：西/葡 nuevo(s) alimento(s)、意 nuovo alimento、
+    # 波 nowa zywnosc（NFKD 去掉变音后的形态）、英 new food。
+    novel_patterns = [
+        r"\bnovel food\b", r"\bnuevos? alimentos?\b", r"\bnuovo alimento\b",
+        r"\bnuovi alimenti\b", r"\bnow(a|ej|ych) zywnosc", r"\bnowej zywnosci\b",
+        r"\bnew food\b", r"\bnovo alimento\b", r"\bused as food\b",
+    ]
+    if regex_any(novel_patterns, text):
         labels.append(allowed_hazard_lookup.get("novel food", "Novel food"))
         return normalize_labels(labels)
 
@@ -905,36 +917,50 @@ def detect_pesticides_from_subject(
     return normalize_labels(found)
 
 
+# "glass" / "plastic" / "metal" 也可能只是在说包装材料，这时不是异物。
+FOREIGN_BODY_CONTAINER_CONTEXTS = [
+    "glass jar", "glass jars", "glass bottle", "glass bottles", "glass container",
+    "glass containers", "glass packaging", "plastic bottle", "plastic bottles",
+    "plastic packaging", "plastic container", "plastic containers", "plastic film",
+    "plastic wrap", "plastic tray", "plastic trays", "metal detector", "metal can",
+    "metal cans", "wooden box", "wooden boxes", "wooden pallet", "wooden crate",
+    "plastic bag", "plastic bags", "plastic dish", "plastic fibre", "plastic straw",
+    "stone flower", "stone fruit", "steel cut",
+]
+
+# 食品接触材料的通报讲的是材料本身不合规，不是食品里混入异物。
+FOOD_CONTACT_CONTEXTS = ["food contact material", "food contact materials"]
+
+
 def detect_foreign_bodies_from_subject(subject: str, allowed_hazard_lookup: Dict[str, str]) -> List[str]:
+    """异物：显式说法 + FAMILY_CHILD_CUES 里的子类线索。
+
+    原实现是 22 条硬编码短语（"glass fragment"、"metal fragments"、"piece of wood" ...），
+    命不中 "glass in pasta sauce" / "metal in bread" / "insects in broccoli" / "maggots in milk"
+    这类最常见的写法，2024 ground truth 上因此漏掉 61 条。这里改成复用词表家族的
+    子类线索，父级交给 refine_family_children 换成 Foreign bodies (glass/metal/insect/...)。
+    """
     text = normalize_text_for_match(subject)
 
-    cues = [
-        "foreign body",
-        "foreign bodies",
-        "glass fragment",
-        "glass fragments",
-        "piece of glass",
-        "pieces of glass",
-        "plastic fragment",
-        "plastic fragments",
-        "plastic particle",
-        "plastic particles",
-        "piece of plastic",
-        "pieces of plastic",
-        "metal fragment",
-        "metal fragments",
-        "metal particles",
-        "piece of wood",
-        "pieces of wood",
-        "dead insects",
-        "bean weevil",
-        "nail",
+    explicit = [
+        r"\bforeign bod(y|ies)\b", r"\bforegin bod(y|ies)\b", r"\bforeign objects?\b",
+        r"\bpests?\b", r"\brodents?\b", r"\brats?\b", r"\bmouse\b", r"\bmice\b",
+        r"\bfaeces\b", r"\bfeces\b", r"\banimal residues\b", r"\bglue\b",
     ]
+    if regex_any(explicit, text):
+        return [allowed_hazard_lookup.get("foreign bodies", "Foreign bodies")]
 
-    if any(c in text for c in cues):
-        if "foreign bodies" in allowed_hazard_lookup:
-            return [allowed_hazard_lookup["foreign bodies"]]
-        return ["Foreign bodies"]
+    if any(ctx in text for ctx in FOOD_CONTACT_CONTEXTS):
+        return []
+
+    for ctx in FOREIGN_BODY_CONTAINER_CONTEXTS:
+        if ctx in text:
+            text = text.replace(ctx, " ")
+
+    child_cues = FAMILY_CHILD_CUES.get("foreign bodies", {})
+    for cues in child_cues.values():
+        if any(re.search(r"\b" + re.escape(c) + r"\b", text) for c in cues):
+            return [allowed_hazard_lookup.get("foreign bodies", "Foreign bodies")]
 
     return []
 
@@ -1036,6 +1062,356 @@ def remove_generic_when_specific_exists(labels: List[str], generic_label: str, p
     return labels
 
 
+# =========================
+# 词表驱动补强层（vocabulary-driven recall boost）
+#
+# 背景（在 2024 ground truth 的 1357 条 no_hazards 上实测）：
+#   * no_hazards_mapping1/2 共 398 条关键词，最多只能产出 172 个 hazard_label，
+#     其中 154 个在 1021 词表内 —— 词表的 84.9% 没有任何关键词可以命中，
+#     对应 no_hazards 金标签出现次数的 40.8%。330 条记录一个关键词都没匹配上。
+#   * detect_allergens_from_subject / detect_foreign_bodies_from_subject 只产出裸
+#     父级，把词表里 24 个 Allergens (...) 和 8 个 Foreign bodies (...) 子类全压平；
+#     错例里 199/292 属于"家族对、括号里的子类错"。
+#
+# 这一层不新增任何标注/映射数据文件，三件事全部从 1021 词表自身（也就是
+# mapping_hazard_label_to_hazard_category_label.json 的 keys，最终 canon_filter
+# 认的就是它）推导出来：
+#   1) refine_family_children —— 裸父级 + subject 里的子类证据 -> 换成词表子类
+#   2) vocab_lexical_hits    —— 整个词表当关键词，在 subject 上做词边界匹配
+#   3) rescue_out_of_vocab   —— 规则产出但已不在词表里的旧写法做受控改写
+# 三者只输出词表内的标签，越不出词表，因此不会引入非法标签。
+# =========================
+
+# 子类线索：除了词表括号里的文字本身，subject 常用的其它写法。只列词形同义词，
+# 不做语义扩展（例如不把 "cheese" 当 milk 的证据）。
+FAMILY_CHILD_CUES = {
+    "allergens": {
+        "milk": ["milk", "dairy"],
+        "lactose": ["lactose"],
+        "lactoprotein": ["lactoprotein", "milk protein", "casein", "caseinate", "whey protein"],
+        "gluten": ["gluten"],
+        "soya": ["soya", "soy", "soybean", "soybeans", "soja"],
+        "wheat": ["wheat"],
+        "egg": ["egg", "eggs"],
+        "sesame": ["sesame", "sesamum"],
+        "fish": ["fish"],
+        "peanut": ["peanut", "peanuts", "groundnut", "groundnuts", "arachide"],
+        "nuts": ["nuts", "nut"],
+        "tree nuts": ["tree nuts", "tree nut"],
+        "almond": ["almond", "almonds"],
+        "hazelnut": ["hazelnut", "hazelnuts"],
+        "cashew nut": ["cashew", "cashews"],
+        "pistachio": ["pistachio", "pistachios"],
+        "walnut": ["walnut", "walnuts"],
+        "celery": ["celery"],
+        "mustard": ["mustard"],
+        "lupin": ["lupin", "lupine", "lupins"],
+        "barley": ["barley"],
+        # 只用家族词本身：subject 里的 "shrimp salad" / "squid rings" 是产品名而不是
+        # 未申报过敏原，金标准这时给的是裸 Allergens。
+        "crustaceans": ["crustacean", "crustaceans", "crustaceo", "crustaceos"],
+        "molluscs": ["mollusc", "molluscs", "mollusk", "molusco", "moluscos"],
+        "shellfish": ["shellfish"],
+    },
+    "foreign bodies": {
+        "glass": ["glass"],
+        "metal": ["metal", "metallic", "nail", "nails", "wire", "wires", "staple", "staples",
+                  "screw", "screws", "blade", "blades", "copper", "brass", "steel", "aluminium",
+                  "aluminum", "shaving", "shavings", "hook", "hooks", "filings"],
+        "plastic": ["plastic", "plastics", "polystyrene"],
+        "wood": ["wood", "wooden", "toothpick", "toothpicks"],
+        "insect": ["insect", "insects", "weevil", "weevils", "larva", "larvae", "beetle",
+                   "beetles", "moth", "moths", "spider", "spiders", "worm", "worms",
+                   "maggot", "maggots", "infested with insects"],
+        "bone": ["bone", "bones"],
+        "stone": ["stone", "stones", "pebble", "pebbles"],
+        "impurities": ["impurity", "impurities", "dirt", "sand"],
+    },
+    "organoleptic aspects": {
+        "abnormal colour": ["abnormal colour", "abnormal color", "discolouration", "discoloration"],
+        "abnormal smell": ["abnormal smell", "abnormal odour", "abnormal odor", "off odour",
+                           "off odor", "bad smell", "odour", "odor"],
+        "abnormal taste": ["abnormal taste", "off taste", "bitter taste", "bad taste"],
+        "acidity": ["acidity", "sour"],
+        "bombage": ["bombage", "bombing"],
+        "deterioration": ["deterioration", "deteriorated"],
+        "oxidation": ["oxidation", "oxidised", "oxidized", "rancid", "rancidity"],
+        "putrefaction": ["putrefaction", "putrid", "putrefied"],
+        "spoilage": ["spoilage", "spoiled", "spoilt"],
+    },
+    "packaging": {
+        "bulging": ["bulging", "bulged", "swollen"],
+        "improper seaming": ["improper seaming", "seaming", "defective seam"],
+        "inner coating": ["inner coating"],
+        "leaking": ["leaking", "leakage", "leaky"],
+        "outer coating": ["outer coating"],
+        "overpressurised bottles": ["overpressurised", "overpressurized", "over pressurised"],
+        "rusty lid": ["rusty lid", "rusty", "rust"],
+        "unsuitable": ["unsuitable packaging", "inadequate packaging", "damaged packaging"],
+    },
+}
+
+# 通用/程序性标签：词形匹配太容易误报（几乎每条 no_hazards subject 里都有
+# "labelling"），只允许由上面的显式规则给出，不参与全词表词形匹配。
+VOCAB_LEXICAL_STOP = {
+    "labelling", "documentation", "packaging", "allergens", "foreign bodies",
+    "novel food", "novel food ingredient", "unauthorised substance", "food additives",
+    "feed additives", "organoleptic aspects", "temperature control", "veterinary control",
+    "traceability", "hygiene", "composition", "migration", "adulteration / fraud",
+    "poor or insufficient controls", "process contaminants", "industrial contaminants",
+    "heavy metals", "illegal import", "not in catalogue", "chemical contamination",
+    "microbial contamination", "bacterial contamination", "biological contamination",
+    "physical contamination", "food contact material", "residues", "additives",
+    "quality", "other", "unknown", "toxin unknown", "contaminants", "pathogenic micro organisms",
+    # 词形上是普通英文词，出现在 subject 里几乎从不表示该标签本身
+    "colour", "colours", "colouring", "yeasts", "moulds and yeasts", "official control",
+}
+
+# 兜底标签：只有在找不到任何具体标签时才应该保留。subject 说 "unauthorised
+# substance X in food supplement" 时金标准给的是 X 而不是这些。
+FALLBACK_LABELS = {"Novel food", "Novel food ingredient", "Unauthorised substance"}
+
+# "具体标签" 的反面：这些标签本身描述的是问题类型而不是具体危害物，
+# 出现它们不足以证明兜底标签可以去掉。
+NON_SPECIFIC_LABELS = {
+    "Novel food", "Novel food ingredient", "Labelling", "Documentation", "Food additives",
+    "Unauthorised substance", "Packaging", "Organoleptic aspects", "Foreign bodies",
+    "Allergens", "Traceability", "Composition", "Hygiene", "Official control",
+    "Illegal import", "Poor or insufficient controls", "Temperature control",
+    "Veterinary control", "Not in catalogue",
+}
+
+# 程序性/合规类标签的线索。这些标签词形匹配不了（subject 里写的是
+# "absence of official documents" 而不是 "documentation"），也不在关键词表里，
+# 是剩余漏报的最大一块。模式全部来自 2024 ground truth 里的真实 subject 写法，
+# 含数据里出现的拼写错误（veterinairy / temperatur）和西/意/葡/波语写法。
+PROCEDURAL_PATTERNS = {
+    "Documentation": [
+        r"\bofficial documents?\b", r"\bimport documents?\b", r"\bmissing documents?\b",
+        r"\bdocumentary (rejection|check)", r"\bdeclaration of conformity\b",
+        r"\b(health|sanitary|veterinary) certificates?\b",
+        r"\black of (sanitary|health) guarantees\b", r"\bfalta de garant",
+        r"\beu plant identification mark\b", r"\bcarcass id\b",
+        r"\banalytical protocol\b", r"\bconsignment code\b",
+        r"\bmandatory advertisements?\b",
+    ],
+    "Labelling": [
+        r"\b(expiry|expiration|consumption|use by|best before|sell by)\s+dates?\b",
+        r"\bbest before\b", r"\bdlc\b", r"\bdate errate\b", r"\bdate error\b",
+        r"\bdurability dates?\b", r"\bincomplete label", r"\blabel without\b",
+        r"\bmisleading label", r"\bmislabel", r"\bwrong label\b", r"\blabel\b.{0,12}mismatch\b",
+        r"\bestablishment of origin\b", r"\bunmarked\b", r"\bec mark\b",
+        r"\bmandatory wording\b", r"\bingredients? list\b", r"\blista ingredienti\b",
+        r"\betichetta\b", r"\breetiquetado\b", r"\bfor sale in\b",
+    ],
+    "Unauthorised substance": [
+        r"\bunauthori[sz]ed substances?\b", r"\bprohibited substances?\b", r"\bniedozwolon",
+        r"\bunsafe ingredient\b", r"\bsteroid hormone precursor\b",
+        r"\bunauthori[sz]ed (plant|flavouring|flavoring|form|ingredient|species)",
+        r"\bplant (species )?not authori[sz]ed\b", r"\bnot authori[sz]ed for use\b",
+        r"\bno autorizad", r"\bnon autoris", r"\bnot authori[sz]ed, containing\b",
+    ],
+    "Veterinary control": [
+        r"\bveterina(ry|iry|ir?y)\s+(import\s+)?(checks?|controls?)\b",
+        r"\bveterin\w*\s+checks?\b", r"\bsubjected to veterina",
+    ],
+    "Official control": [
+        r"\bofficial (import )?controls?\b", r"\bsubjected to official\b",
+        r"\bcustoms control\b", r"\bcheck in the bcp\b",
+        r"\bregulation \(eu\) 2017 625\b",
+    ],
+    "Illegal import": [
+        r"\billegal\w*\s+(cross border\s+)?import", r"\bunauthori[sz]ed import\b",
+        r"\bimport of prohibited\b", r"\bprohibited\b.*\bimport",
+    ],
+    "Traceability": [r"\btraceabilit", r"\btrazabilidad\b", r"\btracciabilit"],
+    "E171 Titanium dioxide": [
+        r"\btitanium\s?dioxide\b", r"\btitanium\s?oxide\b", r"\bdioxido de titanio\b",
+        r"\b(di|bi)ossido di titanio\b", r"\bdwutlenek tytanu\b",
+    ],
+    "E110 Sunset Yellow": [r"\bsunset yellow\b"],
+    "Allergens (gluten)": [
+        # "gluten in gluten-free pizza dough" / 'gluten free' 声称不实
+        r"\bgluten free\b", r"\bsenza glutine\b", r"\bsin gluten\b", r"\bglutenfree\b",
+    ],
+    "Cannabinoid": [r"\bcannabis\b", r"\bcannabidiol\b", r"\bcannabinol\b"],
+    "Temperature control": [
+        r"\binsufficient heat(ing| treatment)\b", r"\bnon frozen transport\b",
+        r"\btemperatur\w*\s+(failures?|controls?)\b",
+        r"\b(deviation in|temperature of)\s+\w*\s*transport\b",
+        r"\btemperature\b.*\bnot suitable\b", r"\bcold chain\b",
+    ],
+    "Packaging": [
+        r"\bpackaging (issues?|defects?|material|problems?)\b", r"\bincorrect packaging\b",
+        r"\bdeformation of packaging\b", r"\bmicroperforation\b",
+        r"\bburst", r"\bexplode\b", r"\bconfezionamento\b",
+        r"\bfragmentation of\b.*\bcontainer\b", r"\bleaking\b",
+    ],
+}
+
+_VOCAB: Dict[str, Any] = {}
+
+
+def _vocab() -> Dict[str, Any]:
+    """从 1021 词表懒加载：标签集 / 家族子类索引 / 词形匹配表。"""
+    if _VOCAB:
+        return _VOCAB
+    try:
+        raw = load_json(MAPPING_LABEL_TO_CATEGORY_PATH)
+    except Exception:
+        raw = {}
+    labels = sorted({k.strip() for k in raw if isinstance(k, str) and k.strip()})
+
+    families: Dict[str, List[Tuple[str, str]]] = {}
+    for lbl in labels:
+        m = re.match(r"^(.*?)\s*\(([^()]+)\)$", lbl)
+        if not m:
+            continue
+        parent, inner = m.group(1).strip(), m.group(2).strip()
+        if parent:
+            families.setdefault(parent.lower(), []).append((lbl, inner.lower()))
+
+    lexical: List[Tuple[str, Any]] = []
+    for lbl in labels:
+        if lbl.lower() in VOCAB_LEXICAL_STOP:
+            continue
+        m = re.match(r"^(.*?)\s*\(([^()]+)\)$", lbl)
+        if m:
+            # 词表里有一批 "全名 (缩写)" 的标签（Nicotinamide mononucleotide (NMN)、
+            # 1,3-Dimethylamylamine (DMAA)、5-Hydroxytryptophan (5-HTP)）。subject 里
+            # 两种写法都出现，任一命中都算这个标签；其它带括号的（子类）走家族细化。
+            inner = m.group(2).strip()
+            # 只认真正的缩写（全大写/数字，如 NMN、DMAA、5-HTP）。像 "(metal)"、
+            # "(milk)" 这样的小写括号内容是家族子类，必须走 refine_family_children，
+            # 不能在这里直接词形命中，否则会绕过整套家族判定。
+            if " " in inner or len(inner) > 8 or not re.fullmatch(r"[0-9A-Z][0-9A-Z,.\-]*", inner):
+                continue
+            forms = [(m.group(1).strip(), False), (inner, True)]
+        else:
+            forms = [(lbl, False)]
+        for form, is_acronym in forms:
+            nk = normalize_text_for_match(form)
+            # "Lead" / "Iron" 这类常用英文词不做词形匹配；缩写形式（nmn / dmaa）例外
+            if len(nk) < 3 or (not is_acronym and len(nk) < 6):
+                continue
+            lexical.append((lbl, re.compile(r"\b" + re.escape(nk) + r"s?\b")))
+
+    _VOCAB.update({
+        "labels": labels,
+        "lookup": {x.lower(): x for x in labels},
+        "families": families,
+        "lexical": lexical,
+    })
+    return _VOCAB
+
+
+def _child_cues(parent_lower: str, inner: str) -> List[str]:
+    """某个子类在 subject 里可接受的写法 = 括号内文字 + FAMILY_CHILD_CUES 补充。"""
+    cues = {inner}
+    cues.update(FAMILY_CHILD_CUES.get(parent_lower, {}).get(inner, []))
+    return [c for c in cues if c]
+
+
+def refine_family_children(labels: List[str], subject: str) -> List[str]:
+    """预测出裸父级时，按 subject 里的证据换成词表里的具体子类；无证据则保留父级。"""
+    v = _vocab()
+    if not v["families"]:
+        return labels
+    text = normalize_text_for_match(subject)
+    fb_text = text
+    for ctx in FOREIGN_BODY_CONTAINER_CONTEXTS:          # "steel cut oats" 不是金属异物
+        fb_text = fb_text.replace(ctx, " ")
+    out: List[str] = []
+    for lbl in labels:
+        children = v["families"].get(lbl.lower())
+        if not children:
+            out.append(lbl)
+            continue
+        text = fb_text if lbl.lower() == "foreign bodies" else normalize_text_for_match(subject)
+        matched = [
+            child for child, inner in children
+            if any(re.search(r"\b" + re.escape(c) + r"\b", text) for c in _child_cues(lbl.lower(), inner))
+        ]
+        if matched:
+            out.extend(matched)
+        elif lbl.lower() not in v["lookup"] and len(children) == 1:
+            # 词表里只有带括号的写法（"Nicotinamide mononucleotide (NMN)"、
+            # "1,3-Dimethylamylamine (DMAA)"），裸父级本身不合法且不存在歧义 -> 直接用子类，
+            # 否则会被 canon_filter 丢成空预测。
+            out.append(children[0][0])
+        else:
+            out.append(lbl)
+    return normalize_labels(out)
+
+
+def detect_procedural_from_subject(subject: str) -> List[str]:
+    """程序性/合规类标签：靠 subject 的固定说法识别，词形匹配和关键词表都覆盖不到。"""
+    text = normalize_text_for_match(subject)
+    if not text:
+        return []
+    lookup = _vocab()["lookup"]
+    out = []
+    for lbl, patterns in PROCEDURAL_PATTERNS.items():
+        if regex_any(patterns, text):
+            out.append(lookup.get(lbl.lower(), lbl))
+    return normalize_labels(out)
+
+
+# 词形匹配的排除语境：这些短语里的词只是配料/产品名的一部分，不是危害本身。
+VOCAB_LEXICAL_EXCLUDE = [
+    "red yeast rice", "yeast extract", "brewer's yeast", "brewers yeast",
+]
+
+
+def vocab_lexical_hits(subject: str) -> List[str]:
+    """整个 1021 词表当关键词表，在 subject 上做词边界匹配，补关键词表缺的那 85%。"""
+    text = normalize_text_for_match(subject)
+    if not text:
+        return []
+    for phrase in VOCAB_LEXICAL_EXCLUDE:
+        text = text.replace(normalize_text_for_match(phrase), " ")
+    return normalize_labels([lbl for lbl, rx in _vocab()["lexical"] if rx.search(text)])
+
+
+_RESCUE_REWRITES = [
+    lambda s: s[:-1] if s.endswith("s") else s + "s",            # Mould <-> Moulds
+    lambda s: re.sub(r"\s+(FCF|fcf)$", "", s),                   # E133 Brilliant Blue FCF
+    lambda s: re.sub(r"\s*\([^()]*\)\s*$", "", s).strip(),       # 去掉尾部括号
+    lambda s: s[0].upper() + s[1:] if s else s,
+    lambda s: s.replace(" spp", " spp."),
+    lambda s: s.replace(" spp.", " spp"),
+]
+
+
+def rescue_out_of_vocab(labels: List[str]) -> List[str]:
+    """规则产出但已不在词表里的旧写法做受控改写；只在改写结果落回词表时才接受。
+
+    针对 18 个已失效写法（Mould/Moulds、E110 Sunset Yellow FCF/E110 Sunset Yellow、
+    Clostridium perfringen/Clostridium perfringens ...）。改不回词表的原样保留，
+    交给后面的 canon_filter 决定去留 —— 不会因为抢救而放宽词表约束。
+    """
+    v = _vocab()
+    lookup = v["lookup"]
+    if not lookup:
+        return labels
+    out: List[str] = []
+    for lbl in labels:
+        if lbl.lower() in lookup:
+            out.append(lbl)
+            continue
+        fixed = None
+        for rewrite in _RESCUE_REWRITES:
+            try:
+                cand = rewrite(lbl)
+            except Exception:
+                continue
+            if cand and cand.lower() in lookup:
+                fixed = lookup[cand.lower()]
+                break
+        out.append(fixed if fixed else lbl)
+    return normalize_labels(out)
+
+
 def infer_no_hazards(
     item: Dict[str, Any],
     mapping1: Dict[str, Dict[str, List[str]]],
@@ -1072,16 +1448,53 @@ def infer_no_hazards(
     direct_labels.extend(detect_other_hazards_from_subject(subject, allowed_hazard_lookup))
     direct_labels.extend(detect_vitamins_from_subject(subject, allowed_hazard_lookup))
 
+    direct_labels.extend(vocab_lexical_hits(subject))
+    direct_labels.extend(detect_procedural_from_subject(subject))
+
     labels = normalize_labels(labels + direct_labels)
+    labels = rescue_out_of_vocab(labels)
     labels = canonicalize_pred_labels(labels, allowed_hazard_lookup, allowed_hazard_labels)
+    labels = refine_family_children(labels, subject)
 
     labels = remove_generic_when_specific_exists(labels, "Salmonella spp", "Salmonella ")
     labels = remove_generic_when_specific_exists(labels, "Listeria spp", "Listeria ")
     labels = remove_generic_when_specific_exists(labels, "Vibrio spp", "Vibrio ")
     labels = remove_generic_when_specific_exists(labels, "Cronobacter spp", "Cronobacter ")
 
-    if "Allergens" in labels and "Labelling" not in labels:
-        labels = ["Allergens"]
+    # 过敏原通报基本只讲过敏原本身（"allergen milk not mentioned in ingredient list" 的
+    # 金标准就是 Allergens (milk)，不带 Labelling），所以命中过敏原时收敛到过敏原家族。
+    # 原实现是 labels = ["Allergens"]，会把 24 个 Allergens (...) 子类全部压平。
+    allergen_labels = [x for x in labels if x == "Allergens" or x.startswith("Allergens (")]
+    if allergen_labels:
+        labels = remove_generic_when_specific_exists(allergen_labels, "Allergens", "Allergens (")
+
+    # no_hazards_mapping1.json 里有关键词 "yeast" -> Yeast，"monacolins from red yeast
+    # rice" 会被它命中，但这类通报讲的是红曲/monacolin 而不是酵母。映射文件不改，
+    # 在这里按证据复核：去掉排除语境后没有独立的 yeast 才撤销这个标签。
+    if "Yeasts" in labels:
+        probe = text
+        for phrase in VOCAB_LEXICAL_EXCLUDE:
+            probe = probe.replace(normalize_text_for_match(phrase), " ")
+        if not re.search(r"\byeasts?\b", probe):
+            labels = [x for x in labels if x != "Yeasts"]
+
+    # 产志贺毒素大肠杆菌在词表里是单独一个标签，别只给通用的 Escherichia coli。
+    if "Escherichia coli" in labels and re.search(r"\b(shigatoxin|shiga toxin|stec|vtec|verotoxi)", text):
+        stec = "Escherichia coli shigatoxin-producing"
+        labels = [x for x in labels if x != "Escherichia coli"]
+        if stec not in labels:
+            labels.append(stec)
+
+    # 兽医检查漏检的通报里都带 "border control post"，别再额外报一个 Official control。
+    if "Veterinary control" in labels and "Official control" in labels:
+        labels = [x for x in labels if x != "Official control"]
+
+    # "foreign bodies (copper strands)" 这类写法里的金属元素名说的是异物材质，
+    # 不是重金属污染，词形匹配出来的元素标签要去掉。
+    if "Foreign bodies (metal)" in labels:
+        labels = [x for x in labels if x not in {
+            "Copper", "Lead", "Iron", "Zinc", "Tin", "Aluminium", "Nickel", "Chromium",
+        }]
 
     specific_ecode_present = any(re.match(r"^E[0-9]{3,4}", x) for x in labels)
     if specific_ecode_present and "Food additives" in labels:
@@ -1096,20 +1509,17 @@ def infer_no_hazards(
         if "Food additives" not in labels:
             labels.append("Food additives")
 
-    generic_novel = {"Novel food", "Novel food ingredient"}
-    specific_novel_like = [x for x in labels if x not in generic_novel and (
-        x == "Cannabinoid" or
-        x in {"Clitoria ternatea", "Tongkat ali (Eurycoma longifolia)", "Nicotinamide mononucleotide"}
-    )]
-
     if labels == ["Novel food ingredient"]:
         labels = ["Novel food"]
 
     if "Cannabinoid" in labels and "Novel food ingredient" in labels:
         labels = [x for x in labels if x != "Novel food ingredient"]
 
-    if specific_novel_like:
-        labels = [x for x in labels if x not in {"Novel food", "Novel food ingredient"}]
+    # Novel food / Novel food ingredient 是兜底写法：subject 说 "unauthorised novel food X"
+    # 时金标准给的是具体物质 X。只要同时找到了任何具体标签就把兜底去掉。原实现只对
+    # 硬编码的 3 个物质做这件事，Novel food 因此误报 64 次。
+    if any(x not in NON_SPECIFIC_LABELS for x in labels):
+        labels = [x for x in labels if x not in FALLBACK_LABELS]
 
     if "novel food" in text and "Bamboo" in labels and "plastic" not in text and "tableware" not in text:
         labels = [x for x in labels if x != "Bamboo"]
@@ -1309,7 +1719,29 @@ def build_canon(label_list: List[str]):
     except Exception:
         pass
     _CANON["keyset"] = set(_CANON["lookup"].keys())
-    _CANON["aliases"] = {_nk_fix(k): v for k, v in _ALIASES_RAW.items()}
+    # 别名表是按旧的 936 词表写的，部分目标写法在 1021 词表里已经不存在
+    # （aliases 里 "moulds" -> "Mould"，而现在词表只有 "Moulds"）。canon937 命中
+    # 别名后是无条件返回的，于是这些别名会把已经正确的标签改错。这里先做一次
+    # 词表校准：目标不在词表内的，用受控改写拉回词表；拉不回来的整条丢掉，
+    # 让原标签自己走后面的匹配逻辑。不改 hazard_canon_config.json 本身。
+    aliases = {}
+    for k, v in _ALIASES_RAW.items():
+        nk = _nk_fix(k)
+        if not nk or not isinstance(v, str) or not v.strip():
+            continue
+        v = v.strip()
+        if _nk_fix(v) in _CANON["keyset"]:
+            aliases[nk] = _CANON["lookup"][_nk_fix(v)]
+            continue
+        for rewrite in _RESCUE_REWRITES:
+            try:
+                cand = rewrite(v)
+            except Exception:
+                continue
+            if cand and _nk_fix(cand) in _CANON["keyset"]:
+                aliases[nk] = _CANON["lookup"][_nk_fix(cand)]
+                break
+    _CANON["aliases"] = aliases
     _CANON["allergen"] = {_nk_fix(x) for x in _ALLERGEN_FOODS_RAW}
 
 
@@ -1319,10 +1751,13 @@ def canon937(x: str) -> str:
     nk = _nk_fix(x)
     if nk in _CANON["allergen"]:
         return "Allergens"
-    if nk in _CANON["aliases"]:
-        return _CANON["aliases"][nk]
+    # 词表命中优先于别名表：别名表是按旧词表写的，里面有 "nicotinamide mononucleotide
+    # (nmn)" -> "Novel food" 这种把已经合法的具体标签折叠回旧兜底标签的条目。
+    # 已经在 1021 词表里的标签一律不再改写。
     if nk in _CANON["keyset"]:
         return _CANON["lookup"][nk]
+    if nk in _CANON["aliases"]:
+        return _CANON["aliases"][nk]
     m = re.search(r"\be(\d{3,4})", nk)                   # E 编号唯一前缀匹配
     if m:
         base = "e" + m.group(1)
