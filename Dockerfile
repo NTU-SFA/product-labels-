@@ -12,7 +12,7 @@
 # Predict on the 2024 batch file:
 #   docker run --rm rasff_labels predict-product      # product_label (LLM)
 #   docker run --rm rasff_labels predict-hazard       # hazard label/category (table-lookup, no token)
-# Override the Bedrock token (recommended over the baked-in default):
+# No credential is baked into the image; pass the Bedrock token at run time:
 #   docker run --rm -e AWS_BEARER_TOKEN_BEDROCK=... rasff_labels
 
 FROM python:3.10-slim

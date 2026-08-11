@@ -5,17 +5,26 @@ and runs cleanly anywhere — no manual dependency setup. Code, prompts and data
 included.
 
 ## What runs
-| Mode | Script | Purpose | LLM? |
-|------|--------|---------|------|
-| `test-product` (default) | `evaluate_product_label.py` | product_label vs 2024 ground truth (Precision/Recall/F1) | ✅ Bedrock |
-| `test-hazard` | `hazard_eval_gt2024.py` | hazard label/category vs 2024 ground truth | ❌  table lookup |
-| `predict-product` | `Claude_eval.py` | predict product_label on the 2024 batch file (can change)| ✅ Bedrock |
-| `predict-hazard` | `hazard_eval.py` | predict hazard label/category on the 2024 batch file (can change) | ❌  table lookup |
-| `predict-hazard-llm` | `hazard_predict_folder_llm.py` | same, but records without a structured `hazards` field go to the LLM instead of the keyword rules. Reads a *folder* of product-label outputs, which is not in this repo — set `INPUT_DIR` | ✅ Bedrock (no-hazards branch only) |
+Modes are dispatched by `Assay_attr_Extraction_Codes/entrypoint.sh`; extra arguments are passed
+straight through to the Python script.
+
+| Mode | Script | Purpose | Output dir | LLM? |
+|------|--------|---------|------------|------|
+| `test-product` (default) | `evaluate_product_label.py` | product_label vs 2024 ground truth (Precision/Recall/F1) | `eval_product_label_output/` | ✅ Bedrock |
+| `test-hazard` | `hazard_eval_gt2024.py` | hazard label/category vs 2024 ground truth | `Outputs_hazard_eval_gt2024/` | ❌ table lookup + keyword rules |
+| `predict-product` | `Claude_eval.py` | predict product_label on a 2024 batch file (batch1 by default; batch2–6 are commented out in the source) | `Outputs_predict_batch_files/` | ✅ Bedrock |
+| `predict-hazard` | `hazard_eval.py` | predict hazard label/category on one 2024 batch file (batch1 by default, `-e INPUT_FILE=...` to change) | `Outputs_hazard_predict_rule_only_v6/` | ❌ table lookup + keyword rules |
+| `predict-hazard-llm` | `hazard_predict_folder_llm.py` | same, but records without a structured `hazards` field go to the LLM instead of the keyword rules. Reads a *folder* of product-label outputs, which is not in this repo — set `INPUT_DIR` | `<folder-name>_hazard_llm/` | ✅ Bedrock (no-hazards branch only) |
+| `shell` | — | drop into bash for debugging | — | — |
 
 Records that carry a structured `hazards` field are always resolved by table lookup, in every
-mode. The modes differ only in how records with just a subject are handled: keyword rules
-(`hazard_eval.py`, `hazard_eval_gt2024.py`) or Claude (`hazard_predict_folder_llm.py`).
+mode. The modes differ only in how records with just a subject are handled: n-gram keyword rules
+over `hazard/no_hazards_mapping1.json` + `no_hazards_mapping2.json` (`hazard_eval.py`,
+`hazard_eval_gt2024.py`) or Claude (`hazard_predict_folder_llm.py`).
+
+`hazard_eval_gt2024_spec.py` (ground-truth test with the LLM no-hazards branch),
+`hazard_model_bakeoff.py` and `bedrock_probe_nonanthropic.py` have no Docker mode — run them with
+`docker run --rm rasff_labels shell` or directly with `python`.
 
 ## Prerequisites
 - **Docker Desktop** installed and running (`docker info` should succeed).
@@ -30,24 +39,32 @@ docker build -t rasff_labels .
 ```bash
 docker run --rm rasff_labels                          # 2024 product-label test (full)
 docker run --rm rasff_labels test-product --limit 20  # quick product test (20 records)
-docker run --rm rasff_labels test-hazard              # 2024 hazard test
-docker run --rm rasff_labels predict-product          # product predict on 2024 batch
-docker run --rm rasff_labels predict-hazard           # hazard predict (table-lookup only, no token needed)
+docker run --rm rasff_labels test-hazard              # 2024 hazard test (no token needed)
+docker run --rm rasff_labels predict-product          # product predict on a 2024 batch file
+docker run --rm rasff_labels predict-hazard           # hazard predict (no token needed)
 docker run --rm rasff_labels predict-hazard-llm       # hazard predict, no-hazards branch via LLM
 ```
 
 `predict-hazard-llm` reads a folder of product-label outputs (`-e INPUT_DIR=...`) and writes
-`<folder-name>_hazard_llm/` next to it.
+`<folder-name>_hazard_llm/` next to it (a trailing `_product` in the folder name is replaced).
 
 ### Bedrock credentials
-No token is committed: the scripts fall back to the literal placeholder
-`REPLACE_WITH_YOUR_AWS_BEARER_TOKEN_BEDROCK`, so any mode that calls Bedrock fails until you
-pass your own:
+No token is committed:
+- `evaluate_product_label.py` and `Claude_eval.py` raise
+  `ValueError: Please set a valid AWS_BEARER_TOKEN_BEDROCK.` when the variable is unset (the
+  literal placeholder `REPLACE_WITH_YOUR_AWS_BEARER_TOKEN_BEDROCK` in `Claude_eval.py` /
+  `Claude_predict_folder.py` is only a fallback string, never a working credential).
+- `hazard_predict_folder_llm.py` raises `ValueError: Set ANTHROPIC_API_KEY (Anthropic direct) or
+  AWS_BEARER_TOKEN_BEDROCK (Bedrock).`
+
 ```bash
 docker run --rm -e AWS_BEARER_TOKEN_BEDROCK="<your-token>" rasff_labels
 ```
-Region `ap-southeast-1`, model `global.anthropic.claude-sonnet-4-6`. `predict-hazard` is
-table-lookup only and needs no token.
+
+Model `global.anthropic.claude-sonnet-4-6` throughout. Region differs by script: the product
+scripts pin `ap-southeast-1`; `hazard_predict_folder_llm.py` defaults to `us-east-1` and honours
+`-e AWS_REGION=...`. It also accepts `-e ANTHROPIC_API_KEY=...` to call the Anthropic API directly
+instead of Bedrock. `test-hazard` and `predict-hazard` need no token at all.
 
 ### Cheap smoke testing
 ```bash
@@ -56,8 +73,8 @@ docker run --rm -e DEBUG_N=5 rasff_labels predict-product
 ```
 
 ### Getting results out
-Outputs are written under `Assay_attr_Extraction_Codes/` (e.g. `eval_product_label_output/`,
-`Outputs_hazard_eval_gt2024/`, `Outputs_predict_batch_files/`). Mount a volume to keep them:
+Outputs are written under `Assay_attr_Extraction_Codes/` — see the output-dir column above. Mount
+a volume to keep them:
 ```bash
 docker run --rm -v "$PWD/out:/app/Assay_attr_Extraction_Codes/eval_product_label_output" rasff_labels
 ```
@@ -73,12 +90,15 @@ python Assay_attr_Extraction_Codes/hazard_eval.py
 ## Layout
 ```
 .
-├── Assay_attr_Extraction_Codes/   # the 5 entry scripts + Claude_predict_folder.py (imported by
-│                                  # evaluate_product_label.py) + prompts/config + requirements
-├── FIND-food-recall-data-main_V2/ # product_labels.txt + 2024 batch files
+├── Assay_attr_Extraction_Codes/   # the 5 entry scripts + hazard_eval_gt2024_spec,
+│                                  #   hazard_model_bakeoff, bedrock_probe_nonanthropic (no Docker
+│                                  #   mode) + Claude_predict_folder.py (imported, not an entry
+│                                  #   point) + prompts, hazard_canon_config.json, entrypoint.sh,
+│                                  #   requirements.txt
+├── FIND-food-recall-data-main_V2/ # product_labels.txt + rasff_data_2024_batch1..6.json
 ├── hazard/                        # hazard gold + mapping json
-├── rasff_2024_ground_truth_labels.json  # 2024 ground truth (used by the two test modes)
-├── Dockerfile
-└── .dockerignore
+├── rasff_2024_ground_truth_labels.json  # 2024 ground truth (read by the four test scripts)
+├── Dockerfile, .dockerignore, .gitignore
+└── README.md, README_docker.md
 ```
 All paths derive from `RASFF_ROOT` (the repo root locally; `/app` in the image).
