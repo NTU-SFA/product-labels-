@@ -37,11 +37,36 @@ structured `hazards` field, 1357 subject-only. `exact` = full set equality on th
 | keyword rules (`test-hazard`) | `hazard_label` exact | 0.9990 | **0.8828** | **0.9689** |
 | keyword rules (`test-hazard`) | `hazard_category_label` exact | 0.9985 | **0.9057** | **0.9745** |
 
-Full per-segment Jaccard and micro P/R/F1, plus the caveats that matter when comparing the two
-branches, are in [`README.md`](README.md#hazard-accuracy-on-the-2024-ground-truth). In short: the
-`has_hazards` segment never calls an LLM in either branch (it is mapping-file coverage), and the
-keyword branch's inputs overlap the 2024 test set, so its numbers are optimistic and not directly
-comparable. Reproduce with:
+Per-segment Jaccard and micro P/R/F1 (`hazard_label` / `hazard_category_label`):
+
+| Branch | segment | n | jaccard | P | R | F1 |
+|---|---|---:|---:|---:|---:|---:|
+| LLM | has_hazards | 3892 | 0.9993 / 0.9988 | 0.9996 / 0.9998 | 0.9987 / 0.9985 | 0.9991 / 0.9991 |
+| LLM | no_hazards | 1357 | 0.9138 / 0.9382 | 0.9195 / 0.9495 | 0.9275 / 0.9481 | 0.9235 / 0.9488 |
+| keyword rules | has_hazards | 3892 | 0.9993 / 0.9988 | 0.9996 / 0.9998 | 0.9987 / 0.9985 | 0.9991 / 0.9991 |
+| keyword rules | no_hazards | 1357 | 0.9004 / 0.9188 | 0.9375 / 0.9633 | 0.9137 / 0.9263 | 0.9254 / 0.9444 |
+
+Three caveats when comparing the branches:
+
+- The `has_hazards` segment never calls an LLM in either branch — 0.9990 there is the coverage of
+  `hazard/has_hazards_mapping_hazard_label.json`, not a model score. The category gap is two labels
+  with no entry in `mapping_hazard_label_to_hazard_category_label.json`: `Bacterial contamination`
+  and `Toxin unknown`.
+- The keyword branch builds its allowed-label sets from
+  `hazard/rasff_data_2020_to_2026_*_with_labels.json`, which already contain the records being
+  scored — 3892/3892 (100%) of `has_hazards` and 1038/1357 (76.5%) of `no_hazards`. Its figures are
+  optimistic and not directly comparable with the LLM branch, which sees only the subject and the
+  allowed-label list.
+- `no_hazards` used to score 0.5099 / 0.7170 on the keyword branch because the rules were written
+  against the older 936-label taxonomy. `hazard_eval.py` now also matches the taxonomy's own label
+  names against the subject, resolves family parents to their specific child
+  (`Allergens` → `Allergens (milk)`, `Foreign bodies` → `Foreign bodies (metal)`, …), adds cue
+  patterns for the procedural labels that are never worded literally in a subject (`Documentation`,
+  `Labelling`, `Traceability`, `Temperature control`, `Veterinary control`, `Official control`,
+  `Illegal import`, `Packaging`), and stops applying `hazard_canon_config.json` aliases that target
+  the old 936-label space. No data file was changed.
+
+Reproduce with:
 
 ```bash
 docker run --rm rasff_labels test-hazard                      # keyword rules, no token
