@@ -26,6 +26,34 @@ over `hazard/no_hazards_mapping1.json` + `no_hazards_mapping2.json` (`hazard_eva
 `hazard_model_bakeoff.py` and `bedrock_probe_nonanthropic.py` have no Docker mode — run them with
 `docker run --rm rasff_labels shell` or directly with `python`.
 
+## Hazard accuracy on the 2024 ground truth
+Measured on the `rasff_2024_ground_truth_labels.json` in this image: 5249 records — 3892 with a
+structured `hazards` field, 1357 subject-only. `exact` = full set equality on the record.
+
+| Branch | field | has_hazards | no_hazards | overall |
+|---|---|---:|---:|---:|
+| LLM (`hazard_eval_gt2024_spec.py`, prompt V3) | `hazard_label` exact | 0.9990 | **0.8968** | **0.9726** |
+| LLM (`hazard_eval_gt2024_spec.py`, prompt V3) | `hazard_category_label` exact | 0.9985 | **0.9256** | **0.9796** |
+| keyword rules (`test-hazard`) | `hazard_label` exact | 0.9928 | 0.5099 | 0.8680 |
+| keyword rules (`test-hazard`) | `hazard_category_label` exact | 0.9949 | 0.7170 | 0.9230 |
+
+Full per-segment Jaccard and micro P/R/F1, plus the caveats that matter when comparing the two
+branches, are in [`README.md`](README.md#hazard-accuracy-on-the-2024-ground-truth). In short: the
+`has_hazards` segment never calls an LLM in either branch (it is mapping-file coverage), and the
+keyword branch's inputs overlap the 2024 test set, so its numbers are optimistic and not directly
+comparable. Reproduce with:
+
+```bash
+docker run --rm rasff_labels test-hazard                      # keyword rules, no token
+docker run --rm -e AWS_BEARER_TOKEN_BEDROCK="<token>" \
+  -e CLAUDE_MODEL=us.amazon.nova-pro-v1:0 rasff_labels \
+  shell -c "python hazard_eval_gt2024_spec.py"                # LLM branch
+```
+
+The LLM figures were produced with `us.amazon.nova-pro-v1:0` rather than the
+`global.anthropic.claude-sonnet-4-6` default, because Anthropic model access on the AWS account used
+for the run is still gated.
+
 ## Prerequisites
 - **Docker Desktop** installed and running (`docker info` should succeed).
 - PyCharm ↔ Docker: https://www.jetbrains.com/help/pycharm/docker.html#connect_to_docker

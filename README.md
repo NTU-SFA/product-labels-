@@ -50,6 +50,52 @@ allowed label set given to the LLM).
 a fixed sample of the ground-truth no-hazards records; `bedrock_probe_nonanthropic.py` probes which
 non-Anthropic models the current credentials can reach.
 
+### Hazard accuracy on the 2024 ground truth
+
+Measured on `rasff_2024_ground_truth_labels.json` as shipped here: 5249 records —
+3892 with a structured `hazards` field, 1357 subject-only. `exact` is full set equality on the
+record (the primary metric); P/R/F1 are micro-averaged over labels.
+
+**LLM branch** — `hazard_eval_gt2024_spec.py`, prompt `hazard_no_hazards_prompt_V3.txt`,
+1021-label space:
+
+| field | segment | n | exact | jaccard | P | R | F1 |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `hazard_label` | has_hazards | 3892 | **0.9990** | 0.9993 | 0.9996 | 0.9987 | 0.9991 |
+| `hazard_label` | no_hazards | 1357 | **0.8968** | 0.9138 | 0.9195 | 0.9275 | 0.9235 |
+| `hazard_label` | overall | 5249 | **0.9726** | 0.9772 | 0.9827 | 0.9837 | 0.9832 |
+| `hazard_category_label` | has_hazards | 3892 | **0.9985** | 0.9988 | 0.9998 | 0.9985 | 0.9991 |
+| `hazard_category_label` | no_hazards | 1357 | **0.9256** | 0.9382 | 0.9495 | 0.9481 | 0.9488 |
+| `hazard_category_label` | overall | 5249 | **0.9796** | 0.9831 | 0.9874 | 0.9862 | 0.9868 |
+
+147 records mismatch in total. Notes on reading these numbers:
+
+- The `has_hazards` segment involves **no LLM** — it is the mapping file's coverage, so 0.9990 is a
+  property of `hazard/has_hazards_mapping_hazard_label.json`, not of the model. The remaining gap on
+  category is two labels with no entry in `mapping_hazard_label_to_hazard_category_label.json`:
+  `Bacterial contamination` and `Toxin unknown`.
+- Only the `no_hazards` segment measures the LLM. It was run with **`us.amazon.nova-pro-v1:0`**, not
+  the `global.anthropic.claude-sonnet-4-6` default, because Anthropic model access on the AWS
+  account used for the run is still gated. Set `CLAUDE_MODEL` to reproduce with another model;
+  0 LLM errors in this run.
+
+**Keyword-rule branch** — `hazard_eval_gt2024.py` (`test-hazard`), same ground truth, no LLM:
+
+| field | has_hazards | no_hazards | overall |
+|---|---:|---:|---:|
+| `hazard_label` exact | 0.9928 | 0.5099 | 0.8680 |
+| `hazard_category_label` exact | 0.9949 | 0.7170 | 0.9230 |
+
+Two caveats make this branch **not** a fair comparison:
+
+1. **The test set leaks into its inputs.** It builds its allowed-label sets and preferred lookups
+   from `hazard/rasff_data_2020_to_2026_*_with_labels.json`, which already contain the 2024 records
+   being scored — 3892/3892 (100%) of the `has_hazards` records and 1038/1357 (76.5%) of the
+   `no_hazards` ones. Its `has_hazards` figure is therefore optimistic.
+2. **Its rules target the previous taxonomy.** They were tuned against the older 936-label space, so
+   they under-perform on the current 1021-label ground truth. This is the legacy path; the LLM
+   branch above is the current one.
+
 ## Run with Docker (recommended)
 
 Everything (code, prompts, data) is bundled, so it installs and runs anywhere — no manual
