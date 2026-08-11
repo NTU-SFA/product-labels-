@@ -17,7 +17,7 @@
 外部依赖（数据/Prompt，非 .py）：
   - hazard/has_hazards_mapping_hazard_label.json
   - hazard/mapping_hazard_label_to_hazard_category_label.json
-  - hazard_no_hazards_prompt_V3.txt（可用 PROMPT_PATH 覆盖；V2 保留作对照）
+  - hazard_no_hazards_prompt_V3.txt（可用 PROMPT_PATH 覆盖）
   - hazard_canon_config.json
 Python 包：langchain_aws, langchain_anthropic, langchain_core, tqdm
 环境变量：AWS_BEARER_TOKEN_BEDROCK（Bedrock）或 ANTHROPIC_API_KEY（直连）；
@@ -49,7 +49,6 @@ CODE_DIR = os.path.join(RASFF_ROOT, "Assay_attr_Extraction_Codes")
 HAZARD_DIR = os.path.join(RASFF_ROOT, "hazard")
 
 HAS_HAZARDS_MAPPING_HAZARD_LABEL_PATH = os.path.join(HAZARD_DIR, "has_hazards_mapping_hazard_label.json")
-HAS_HAZARDS_MAPPING_HAZARD_CATEGORY_LABEL_PATH = os.path.join(HAZARD_DIR, "has_hazards_mapping_hazard_category_label.json")
 MAPPING_LABEL_TO_CATEGORY_PATH = os.path.join(HAZARD_DIR, "mapping_hazard_label_to_hazard_category_label.json")
 
 # 候选 hazard_label 集 = label->category 映射文件的 keys（937 个规范标签）

@@ -1,6 +1,6 @@
 """在 2024 GT 的 no_hazards 记录上横评多个 Bedrock 模型（Claude 被账号门禁时的替补选型）。
 
-固定同一份抽样子集 + 同一份 prompt（默认 V2），逐模型打分：
+固定同一份抽样子集 + 同一份 prompt（默认跟随主 pipeline），逐模型打分：
   exact       整条记录标签集合完全一致的比例（主指标，和正式评估同定义）
   jaccard     平均 Jaccard
   P/R/F1      micro
@@ -24,8 +24,7 @@ import hazard_predict_folder_llm as L
 
 GT_PATH = os.environ.get("GROUND_TRUTH_PATH",
                          os.path.join(L.RASFF_ROOT, "rasff_2024_ground_truth_labels.json"))
-PROMPT_PATH = os.environ.get("PROMPT_PATH",
-                             os.path.join(L.CODE_DIR, "hazard_no_hazards_prompt_V2.txt"))
+PROMPT_PATH = os.environ.get("PROMPT_PATH", L.NO_HAZARD_PROMPT_PATH)
 OUT_DIR = os.environ.get("OUTPUT_DIR", os.path.join(L.CODE_DIR, "Outputs_hazard_model_bakeoff"))
 SAMPLE_N = int(os.environ.get("SAMPLE_N", "60"))
 WORKERS = int(os.environ.get("WORKERS", "8"))

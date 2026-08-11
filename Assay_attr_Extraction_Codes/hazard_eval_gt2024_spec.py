@@ -27,7 +27,7 @@ RASFF_ROOT = L.RASFF_ROOT
 GT_PATH = os.environ.get("GROUND_TRUTH_PATH", os.path.join(RASFF_ROOT, "rasff_2024_ground_truth_labels.json"))
 OUTPUT_DIR = os.environ.get("OUTPUT_DIR", os.path.join(L.CODE_DIR, "Outputs_hazard_eval_gt2024_spec"))
 CACHE_PATH = os.path.join(OUTPUT_DIR, "llm_raw_cache.json")
-# 换 prompt 请配 PROMPT_PATH（V2 = 细粒度子标签版，对齐 1021 词表）
+# 换 prompt 请配 PROMPT_PATH（默认 = 主 pipeline 的 V3，对齐 1021 词表）
 PROMPT_PATH = os.environ.get("PROMPT_PATH", L.NO_HAZARD_PROMPT_PATH)
 MAX_WORKERS = int(os.environ.get("MAX_WORKERS", "10"))
 USE_CACHE = os.environ.get("USE_CACHE", "1") == "1"
